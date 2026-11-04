@@ -1,0 +1,27 @@
+# ---- Vivado generated files (rebuilt automatically, don't commit) ----
+*.cache/
+*.hw/
+*.runs/
+*.sim/
+*.ip_user_files/
+*.gen/
+.Xil/
+*.jou
+*.log
+*.str
+*.backup.*
+*.zip
+webtalk*
+vivado_pid*
+usage_statistics_webtalk.*
+*.wdb
+*.pb
+*.dcp
+
+# keep the final bitstream out too (build it yourself)
+*.bit
+
+# ---- OS junk ----
+.DS_Store
+Thumbs.db
+desktop.ini
