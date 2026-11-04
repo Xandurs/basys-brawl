@@ -26,9 +26,9 @@ module cpu_control(
     parameter PUNCH    = 4'b0010;
     parameter BLOCK    = 4'b0011;
     parameter RETREAT  = 4'b0100;
-    parameter JUMP     = 4'b0101;
-    parameter FIREBALL = 4'b0110;
-    parameter DASH     = 4'b0111;
+    parameter JUMP     = 4'b0111;
+    parameter FIREBALL = 4'b0101;
+    parameter DASH     = 4'b0110;
     parameter SHIELD   = 4'b1000;
     parameter ULT      = 4'b1001;
 
