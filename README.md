@@ -11,15 +11,19 @@ left the CPU with less health wins.
 | Member  | Parts |
 |---------|-------|
 | Oliver  | `fighter`, `fighter_draw`, `game_tick`, `button_input` |
-| Karthi  | `special_top`, `special_fireball`, `special_def`, `special_dash`, `special_ult`, `ult_manager` |
+| Karthi  | `special_top`, `special_fireball`, `special_def`, `special_dash`, `special_ult`, `ult_unlocker` |
 | Yuhan   | `c_cpu`, `ai_decision`, `cpu_control`, `lfsr`, `control_menu`, `menu_render`, `font_render` |
 | Xander  | `Top_Basys_Brawl`, `game_flow`, `combat`, `hud`, `font5x7`, `digit_pixel`, `flow_seg`, `num_to_seg` |
 
 ## Building
 
-1. Open the `.xpr` in Vivado. Extract the folder to a short path first; don't open it from inside a zip.
-2. Set `Top_Basys_Brawl` as top.
+1. Clone the repo to a short path (e.g. `C:\EE2026\basys-brawl`). Long paths can break Vivado on Windows.
+2. Open `Basys_Brawl.xpr` in Vivado. All sources and the constraints file are already in the project, and `Top_Basys_Brawl` is set as top.
 3. Run Generate Bitstream, then Hardware Manager → Program Device.
+
+The first synthesis after cloning may warn that the incremental checkpoint is missing. That's expected (it's a build file we don't commit), and Vivado just runs a full synthesis.
+
+Source files live in `Basys_Brawl.srcs/sources_1/`. Teammates' modules are under `imports/`, keeping the paths Vivado gave them when they were added.
 
 Device: `xc7a35tcpg236-1` (Basys 3). The OLED goes on JB.
 
