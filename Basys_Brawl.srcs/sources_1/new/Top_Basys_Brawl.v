@@ -121,6 +121,9 @@ module Top_Basys_Brawl (
     // YUHAN: CPU OPPONENT
     // =====================================================================
     wire cpu_left, cpu_right, cpu_block, cpu_jump, cpu_punch, cpu_fireball, cpu_dash;
+    wire cpu_shield, cpu_ult;          
+    wire [13:0] csp_led;               //CPU specials' ready flags
+    wire cpu_shield_up;
 
     // the CPU can't start a new action while punching, stunned, KO'd, or outside the fight
     wire cpu_busy = !fight_active ||
@@ -134,7 +137,11 @@ module Top_Basys_Brawl (
         .difficulty(difficulty), .personality(personality),
         .cpu_left(cpu_left), .cpu_right(cpu_right), .cpu_block(cpu_block),
         .cpu_jump(cpu_jump), .cpu_punch(cpu_punch),
-        .cpu_fireball(cpu_fireball), .cpu_dash(cpu_dash)
+        .cpu_fireball(cpu_fireball), .cpu_dash(cpu_dash),
+        .fireball_ready(csp_led[13]), .shield_ready(csp_led[12]),
+        .dash_ready(1'b0),   // dash not linked to the fighter yet
+        .ult_ready(1'b0),    // CPU has no meter yet
+        .cpu_shield(cpu_shield), .cpu_ult(cpu_ult)
     );
 
     // =====================================================================
@@ -227,21 +234,21 @@ module Top_Basys_Brawl (
         .tick(tick && fight_active),
         .playing(fight_active), .ko(ko_phase),
         .pixel_index(pixel_index),
-        .sw(10'b0000000000),                    // CPU ult locked for now
+        .sw(10'b0000000000),                    
         .fire_btn(cpu_fireball && fight_active),
-        .def_btn(1'b0),                         // waiting on Yuhan: cpu_shield
-        .dash_input(1'b0),
-        .ult_btn(1'b0),                         // waiting on Yuhan: cpu_ult
+        .def_btn(cpu_shield && fight_active),  
+        .dash_input(1'b0),                       
+        .ult_btn(1'b0),                       //CPU ult not wired yet  
         .fighter_x(c_x), .feet_y(c_feet),
         .face_right(c_face), .state(c_state),
         .attack_top(c_at), .attack_bottom(c_ab),
         .dash_active(), .dash_x(),
         .sp_visible(csp_visible), .sp_colour(csp_colour),
-        .sp_led(),
+        .sp_led(csp_led),
         .fb_hit(cfb_hit), .ult_hit(1'b0),
         .fb_active(cfb_active), .fb_x(cfb_x), .fb_y(cfb_y),
         .ult_active(), .ult_px(), .ult_py(),
-        .shield_up()
+        .shield_up(cpu_shield_up)
     );
 
     // =====================================================================
@@ -263,8 +270,7 @@ module Top_Basys_Brawl (
 
         .p1_fb_active(fb_active),   .p1_fb_x(fb_x),    .p1_fb_y(fb_y),
         .p1_ult_active(ult_active), .p1_ult_x(ult_px), .p1_ult_y(ult_py),
-        .p1_shield(shield_up), .cpu_shield(1'b0),   // CPU shield: waiting on Yuhan
-
+        .p1_shield(shield_up), .cpu_shield(cpu_shield_up),   
         .cpu_fb_active(cfb_active), .cpu_fb_x(cfb_x), .cpu_fb_y(cfb_y),
 
         .p1_hp(p1_hp), .cpu_hp(cpu_hp),

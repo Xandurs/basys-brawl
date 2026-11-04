@@ -5,7 +5,7 @@ module cpu_control(
     input reset,
     
     input action_valid,
-    input [2:0] action,
+    input [3:0] action,
 
     input [6:0] player_x,
     input [6:0] cpu_x,
@@ -16,17 +16,21 @@ module cpu_control(
     output reg cpu_jump,
     output reg cpu_punch,
     output reg cpu_fireball,
-    output reg cpu_dash
+    output reg cpu_dash,
+    output reg cpu_shield,
+    output reg cpu_ult
 );
 
-    parameter NONE     = 3'b000;  //same action code as in ai_decision.v
-    parameter APPROACH = 3'b001;
-    parameter PUNCH    = 3'b010;
-    parameter BLOCK    = 3'b011;
-    parameter RETREAT  = 3'b100;
-    parameter FIREBALL = 3'b101;
-    parameter DASH     = 3'b110;
-    parameter JUMP     = 3'b111;
+    parameter NONE     = 4'b0000;
+    parameter APPROACH = 4'b0001;
+    parameter PUNCH    = 4'b0010;
+    parameter BLOCK    = 4'b0011;
+    parameter RETREAT  = 4'b0100;
+    parameter JUMP     = 4'b0111;
+    parameter FIREBALL = 4'b0101;
+    parameter DASH     = 4'b0110;
+    parameter SHIELD   = 4'b1000;
+    parameter ULT      = 4'b1001;
 
     always @(posedge CLOCK) begin
         
@@ -34,6 +38,8 @@ module cpu_control(
         cpu_punch <= 0;
         cpu_dash <= 0;
         cpu_fireball <= 0;
+        cpu_shield <= 0;
+        cpu_ult <= 0;
 
         if (reset) begin
             cpu_left <= 0;
@@ -90,6 +96,14 @@ module cpu_control(
 
                 JUMP: begin
                     cpu_jump <= 1;
+                end
+                
+                SHIELD: begin
+                    cpu_shield <= 1;
+                end
+
+                ULT: begin
+                    cpu_ult <= 1;
                 end
 
                 NONE: begin                   
