@@ -6,6 +6,7 @@ module special_top(
     // buttons
     input fire_btn,                    // fireball (you used punch)
     input def_btn,                     // defence (you used block)
+    input dash_back_input,                                      
     input dash_input,                  // raw dash switch (edge detect moved in here)
     input ult_btn,                     // ult button (pick one that doesn't also punch)
 
@@ -37,9 +38,14 @@ module special_top(
 );
 
     // ---------- dash edge detect (moved here from fighter_demo_core) ----------
-    reg dash_prev = 0;
-    always @(posedge CLOCK) dash_prev <= dash_input;
-    wire dash_pulse = dash_input && !dash_prev;
+    reg dash_prev = 0, dash_back_prev = 0;
+    always @(posedge CLOCK) begin
+        if (reset) begin dash_prev <= 0; dash_back_prev <= 0; end
+        else begin dash_prev <= dash_input; dash_back_prev <= dash_back_input; end
+    end
+    wire dash_forward_pulse = dash_input && !dash_prev;
+    wire dash_backward_pulse = dash_back_input && !dash_back_prev;
+    wire dash_pulse = dash_forward_pulse || dash_backward_pulse;
 
     // ---------- sp1: fireball ----------
     wire [15:0] fb_colour;  wire fb_visible;
@@ -79,6 +85,7 @@ module special_top(
         .playing(playing), .ko(ko),
         .pixel_index(pixel_index),
         .dash_pressed(dash_pulse),
+        .dash_backward(dash_backward_pulse && !dash_forward_pulse),
         .dashing(dash_active),
         .fighter_x(fighter_x),
         .face_right(face_right),

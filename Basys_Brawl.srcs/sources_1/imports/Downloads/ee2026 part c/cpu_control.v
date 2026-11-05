@@ -48,9 +48,11 @@ module cpu_control(
         end
 
         else if (action_valid) begin
-
-            cpu_left <= 0;
-            cpu_right <= 0;
+                                                                        
+            if (action != PUNCH && action != BLOCK && action != JUMP) begin
+                cpu_left <= 0;
+                cpu_right <= 0;
+            end
             cpu_block <= 0;
             case (action)
                 

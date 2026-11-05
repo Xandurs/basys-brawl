@@ -22,6 +22,7 @@
 
 module Top_Basys_Brawl (
     input         CLOCK, BTNC, BTNL, BTNR, BTNU, BTND,
+    input         PS2Clk, PS2Data,
     input  [15:0] switch,
     output [7:0]  JX,
     output [15:0] LED,
@@ -41,44 +42,52 @@ module Top_Basys_Brawl (
         r2 <= r1;
     end
     wire sys_reset = r2;
+    wire game_reset;
 
     wire tick;                                      // Oliver: 30 Hz game tick
     game_tick timing (.CLOCK(CLOCK), .reset(sys_reset), .tick(tick));
 
     // =====================================================================
-    // INPUTS (Oliver's button_input debouncer)
+    // OLIVER: KEYBOARD INPUTS (PS/2)                                                         
     // =====================================================================
-    wire left, right, block, jump, punch;
-    wire fire_pulse, shield_pulse, ult_pulse;
-    wire down_pressed;
+    wire [21:0] key_held, key_pressed;
+    wire [9:0] code_switches;
+    wire left = key_held[1], right = key_held[2], block = key_held[3];
+    wire jump = key_pressed[0], punch = key_pressed[4];
+    wire fire_pulse = key_pressed[5], shield_pulse = key_pressed[6];
+    wire dash_back_pulse = key_pressed[7], dash_front_pulse = key_pressed[8];
+    wire enter_pressed = key_pressed[9], ult_pulse = key_pressed[20];
+    wire down_pressed = key_pressed[21];
+    wire p_dash_active;
+    wire [6:0] p_dash_x;
 
-    button_input b_l  (.CLOCK(CLOCK), .reset(sys_reset), .raw_button(BTNL), .held(left),  .pressed());
-    button_input b_r  (.CLOCK(CLOCK), .reset(sys_reset), .raw_button(BTNR), .held(right), .pressed());
-    button_input b_d (.CLOCK(CLOCK), .reset(sys_reset), .raw_button(BTND), .held(block), .pressed(down_pressed));
-    button_input b_u  (.CLOCK(CLOCK), .reset(sys_reset), .raw_button(BTNU), .held(),      .pressed(jump));
-    button_input b_c  (.CLOCK(CLOCK), .reset(sys_reset), .raw_button(BTNC), .held(),      .pressed(punch));
-
-    button_input b_fb (.CLOCK(CLOCK), .reset(sys_reset), .raw_button(switch[10]), .held(), .pressed(fire_pulse));
-    button_input b_sh (.CLOCK(CLOCK), .reset(sys_reset), .raw_button(switch[12]), .held(), .pressed(shield_pulse));
-    button_input b_ul (.CLOCK(CLOCK), .reset(sys_reset), .raw_button(switch[13]), .held(), .pressed(ult_pulse));
-    // switch[11] (dash) is reserved: not connected until Oliver + Karthi link dash to the fighter
+    keyboard_controls keyboard (
+        .CLOCK(CLOCK), .reset(sys_reset), .code_reset(game_reset),
+        .PS2Clk(PS2Clk), .PS2Data(PS2Data),
+        .held(key_held), .pressed(key_pressed), .code_sw(code_switches)
+    );
 
     // =====================================================================
-    // YUHAN: MENU (only listens to buttons while on the menu screen)
+    // YUHAN: MENU (only listens to keys while on the menu screen)                                                       
     // =====================================================================
     wire [2:0] phase;                       // declared here because the menu needs it
     wire       in_menu = (phase == 3'b000); // INTRO
     wire [1:0] menu_state, difficulty, personality;
+    wire [1:0] p1_character, p2_character, cpu_character;
+    wire [1:0] character_slot, character_choice;
     wire       start_match;
 
     control_menu menu (
         .CLOCK(CLOCK), .reset(sys_reset),
-        .up_pressed    (jump         && in_menu),     // BTNU
-        .down_pressed  (down_pressed && in_menu),     // BTND
-        .select_pressed(punch        && in_menu),     // BTNC
+        .up_pressed    (jump         && in_menu),         
+        .down_pressed  (down_pressed && in_menu),         
+        .select_pressed(enter_pressed && in_menu),            
         .menu_state(menu_state),
         .difficulty(difficulty), .personality(personality),
-        .round_count(), .start_match(start_match)
+        .round_count(), .start_match(start_match),
+        .p1_character(p1_character), .p2_character(p2_character),
+        .cpu_character(cpu_character), .character_slot(character_slot),
+        .character_choice(character_choice)
     );
     
     
@@ -96,7 +105,7 @@ module Top_Basys_Brawl (
 
     game_flow flow (
         .CLOCK(CLOCK), .reset(sys_reset), .tick(tick),
-        .start_pulse(start_match), .continue_pulse(punch),
+        .start_pulse(start_match), .continue_pulse(enter_pressed),
         .pause_sw(switch[14]),
         .p1_hp(p1_hp), .cpu_hp(cpu_hp),
         .phase(phase), .timer(timer), .count(count), .winner(winner),
@@ -105,7 +114,7 @@ module Top_Basys_Brawl (
         .fighter_playing(fighter_playing), .ko_phase(ko_phase)
     );
 
-    wire game_reset = sys_reset || match_reset;     // everyone resets for a new match
+    assign game_reset = sys_reset || match_reset;     // everyone resets for a new match
 
     // =====================================================================
     // FIGHTER WIRES
@@ -159,6 +168,7 @@ module Top_Basys_Brawl (
         .jump_pressed (jump  && fight_active),
         .punch_pressed(punch && fight_active),
         .special_pressed(1'b0),
+        .dash_active(p_dash_active), .dash_x(p_dash_x),
         .opponent_x(c_x),
         .hit_valid(p1_hit), .hit_push_right(p1_push_right), .ko(p1_hp == 7'b0000000),
         .x(p_x), .feet_y(p_feet), .state(p_state), .face_right(p_face),
@@ -176,6 +186,7 @@ module Top_Basys_Brawl (
         .jump_pressed (cpu_jump  && fight_active),
         .punch_pressed(cpu_punch && fight_active),
         .special_pressed(1'b0),
+        .dash_active(1'b0), .dash_x(7'd0),
         .opponent_x(p_x),
         .hit_valid(cpu_hit), .hit_push_right(cpu_push_right), .ko(cpu_hp == 7'b0000000),
         .x(c_x), .feet_y(c_feet), .state(c_state), .face_right(c_face),
@@ -208,15 +219,16 @@ module Top_Basys_Brawl (
         .tick(tick && fight_active),            // frozen outside the fight
         .playing(fight_active), .ko(ko_phase),
         .pixel_index(pixel_index),
-        .sw(switch[9:0]),                       // ult unlock code
+        .sw(code_switches),                                                        
         .fire_btn(fire_pulse   && fight_active),
         .def_btn (shield_pulse && fight_active),
-        .dash_input(1'b0),                      // SW11 reserved: not linked to the fighter yet
+        .dash_input(dash_front_pulse && fight_active),
+        .dash_back_input(dash_back_pulse && fight_active),
         .ult_btn (ult_pulse && fight_active && p1_meter_full),
         .fighter_x(p_x), .feet_y(p_feet),
         .face_right(p_face), .state(p_state),
         .attack_top(p_at), .attack_bottom(p_ab),
-        .dash_active(), .dash_x(),
+        .dash_active(p_dash_active), .dash_x(p_dash_x),
         .sp_visible(sp_visible), .sp_colour(sp_colour),
         .sp_led(sp_led),
         .fb_hit(fb_hit), .ult_hit(ult_hit),
@@ -241,7 +253,7 @@ module Top_Basys_Brawl (
         .sw(csp_led[9:0]),                      // CPU enters its own code: hint LEDs fed back
         .fire_btn(cpu_fireball && fight_active),
         .def_btn(cpu_shield && fight_active),
-        .dash_input(1'b0),
+        .dash_input(1'b0), .dash_back_input(1'b0),
         .ult_btn(cpu_ult && fight_active && cpu_meter_full),
         .fighter_x(c_x), .feet_y(c_feet),
         .face_right(c_face), .state(c_state),
@@ -302,6 +314,7 @@ module Top_Basys_Brawl (
     fighter_draw p_draw (                       // Oliver
         .pixel_x(sx), .pixel_y(sy), .x(p_x), .feet_y(p_feet),
         .state(p_state), .face_right(p_face), .attack_active(p_atk_active),
+        .character_id(turn ? p2_character : p1_character),
         .attack_left(p_al), .attack_right(p_ar),
         .visible(p_vis), .colour(p_col), 
         .body_colour(turn ? 16'h801F : 16'h001F)    // P1 blue, P2 purple
@@ -309,6 +322,7 @@ module Top_Basys_Brawl (
     fighter_draw c_draw (                       // Oliver
         .pixel_x(sx), .pixel_y(sy), .x(c_x), .feet_y(c_feet),
         .state(c_state), .face_right(c_face), .attack_active(c_atk_active),
+        .character_id(cpu_character),
         .attack_left(c_al), .attack_right(c_ar), .body_colour(16'hF800),
         .visible(c_vis), .colour(c_col)
     );
@@ -331,6 +345,7 @@ module Top_Basys_Brawl (
         .menu_state(menu_state),
         .difficulty(difficulty), .personality(personality),
         .round_count(2'b00),
+        .character_slot(character_slot), .character_choice(character_choice),
         .pixel_data(menu_col)
     );
 

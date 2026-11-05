@@ -80,7 +80,7 @@ module special_ult(
     assign ult_py = ult_y;
     
     //launch condition (waits for tick, blocked while stunned/KO/not playing)
-    wire launch = tick && ult_pending && !ult_lock && !ult_executing
+    wire launch = tick && (ult_pending || (ult_pressed && ult_unlocked)) && !ult_lock && !ult_executing
                   && playing && !ko && !(state == HITSTUN || state == KO);
 
     //one-clock pulse to the manager (NOT ult_executing, which stays high the whole flight)
@@ -96,7 +96,8 @@ module special_ult(
             ult_shots <= 2;
             y_dir <= 0;
         end else begin
-            if (ult_pressed && ult_unlocked && !ult_lock) ult_pending <= 1;       // runs every clock, so a short press is never missed
+            if (!playing || ko) ult_pending <= 0;
+            else if (ult_pressed && ult_unlocked && !ult_lock) ult_pending <= 1;       // runs every clock, so a short press is never missed
 
             if (tick) begin                            // everything below runs once per game frame
                 ult_pending <= 0;                     // consumed (same idea as the fighter's punch_wait)
