@@ -27,6 +27,7 @@ module special_ult(
     input playing,                      // match is live
     input ko,                           // someone is KO'd
     input [12:0] pixel_index,           //pixel location
+    input [1:0] character_id,
     output reg [15:0] oled_data,    // oled output
     output reg visible,             // oled output overlay
     // ---- btnC input ----
@@ -57,8 +58,12 @@ module special_ult(
 
     // ---- settings you may override per instance ----
     parameter COOLDOWN = 300;           // 10s at 30 ticks/s
-    parameter projectile_speed = 3;     // pixels per tick (tune later)
-    parameter radius = 3;               // fireball radius in pixels
+    parameter projectile_speed = 3;     // pixels per tick (tune later) for char 0
+    parameter projectile_1speed = 4;     // pixels per tick (tune later) for char 1
+    parameter projectile_2speed = 1;     // pixels per tick (tune later) for char 2
+    parameter radius = 3;               // fireball radius in pixels for char 0
+    parameter radius_2 = 7;               // gravity ball radius in pixels for char 2
+
     
     // ---- fixed constants (must match the fighter) ----
     localparam IDLE = 0, WALK = 1, JUMP = 2, BLOCK = 3;
@@ -85,6 +90,17 @@ module special_ult(
 
     //one-clock pulse to the manager (NOT ult_executing, which stays high the whole flight)
     assign ult_used = launch;
+
+
+    integer dx, dy;
+    //abs function for diagonal projectile animation
+    function integer abs_s;
+        input integer value;
+        begin
+            abs_s = (value < 0) ? -value : value;
+        end
+    endfunction
+
     
     always @(posedge CLOCK) begin
         if (reset) begin
@@ -103,41 +119,79 @@ module special_ult(
                 ult_pending <= 0;                     // consumed (same idea as the fighter's punch_wait)
 
                 if (launch) begin
-                    ult_executing <= 1;
-                    ult_lock <= 1;
-                    direction <= face_right;
-                    displacement <= 0;
-                    ult_x <= face_right ? (fighter_x + 12) : fighter_x;
-                    ult_y <= (attack_bottom+attack_top)/2;
-                    ult_shots <= 2;
-                    y_dir <= 0;
+                    case(character_id)
+                    2'd0:   begin
+                            ult_executing <= 1;
+                            ult_lock <= 1;
+                            direction <= face_right;
+                            displacement <= 0;
+                            ult_x <= face_right ? (fighter_x + 12) : fighter_x;
+                            ult_y <= (attack_bottom+attack_top)/2;
+                            ult_shots <= 2;
+                            y_dir <= 0;
+                    end
+
+                    2'd1:   begin
+                            ult_executing <= 1;
+                            ult_lock <= 1;
+                            ult_x <= (face_right) ? (fighter_x + 12) : fighter_x;
+                            ult_y <= 10;
+                            direction <= face_right;
+                    end
+
+                    2'd2:   begin 
+                            ult_executing <= 1;
+                            ult_lock <= 1;
+                            ult_x <= (face_right) ? 1 : 95;
+                            ult_y <= 45;
+                            direction <= face_right;
+                    end
+                    endcase
                 end
 
                 if (ult_executing) begin
-                    if (ult_x >= 100 || ult_x == 0 || ult_hit) begin
-                        if(ult_shots == 2) begin
-                            ult_shots <= 1;
-                            ult_x <= direction ? (fighter_x + 12) : fighter_x;
-                            ult_y <= (attack_bottom+attack_top)/2;
-                            y_dir <= 1;
-                        end else if (ult_shots == 1) begin
-                            ult_shots <= 2;
-                            ult_executing <= 0;
-                            y_dir <= 0;
+                    case(character_id)
+                        2'd0:   begin 
+                                if (ult_x >= 100 || ult_x == 0 || ult_hit) begin
+                                    if(ult_shots == 2) begin
+                                        ult_shots <= 1;
+                                        ult_x <= direction ? (fighter_x + 12) : fighter_x;
+                                        ult_y <= (attack_bottom+attack_top)/2;
+                                         y_dir <= 1;
+                                    end else if (ult_shots == 1) begin
+                                        ult_shots <= 2;
+                                        ult_executing <= 0;
+                                        y_dir <= 0;
+                                    end
+                                end
+                                else begin
+                                    ult_x <= (direction)? (ult_x + projectile_speed): (ult_x - projectile_speed);
+                                    ult_y <= (y_dir)? (ult_y + 4): (ult_y -4);
+                                    if(ult_y <= 4) begin
+                                        y_dir <= ~y_dir;
+                                        ult_y <= ult_y + 4;
+                                    end
+                                    else if (ult_y >= 56) begin
+                                        y_dir <= ~y_dir;
+                                        ult_y <= ult_y - 4;
+                                    end
+                                end
                         end
-                    end
-                    else begin
-                        ult_x <= (direction)? (ult_x + projectile_speed): (ult_x - projectile_speed);
-                        ult_y <= (y_dir)? (ult_y + 4): (ult_y -4);
-                        if(ult_y <= 4) begin
-                            y_dir <= ~y_dir;
-                            ult_y <= ult_y + 4;
+
+                        2'd1:   begin
+                                if(ult_y < 60 && ult_x > 1 && ult_x < 100 && !ult_hit) begin
+                                    ult_x <= (direction) ? ult_x + projectile_1speed : ult_x - projectile_1speed;
+                                    ult_y <= ult_y + 7;
+                                end else ult_executing <= 0;
                         end
-                        else if (ult_y >= 56) begin
-                            y_dir <= ~y_dir;
-                            ult_y <= ult_y - 4;
+
+                        2'd2:   begin
+                                if (ult_x < 100 && ult_x > 0 && !ult_hit) begin
+                                    if(ult_x > 0 || ult_x < 100 || !ult_hit) ult_x <= (direction) ? ult_x + projectile_2speed : ult_x - projectile_2speed;
+                                    else ult_executing <= 0;
+                                end
                         end
-                    end
+                    endcase
                 end
 
                 if (ult_lock) countdown <= countdown - 1;
@@ -161,16 +215,52 @@ module special_ult(
         oled_data = 16'h0000;
         
         if(ult_executing) begin //if pending fire action to be completed
-            if((x-ult_x)*(x-ult_x) + (y-ult_y)*(y-ult_y) <= 16) begin
-                visible = 1'b1;
-                if((x-ult_x)*(x-ult_x) + (y-ult_y)*(y-ult_y) <= 9) begin
-                    if((x-ult_x)*(x-ult_x) + (y-ult_y)*(y-ult_y) <= 4) begin
-                        oled_data = 16'h07FF;
-                    end 
-                    else oled_data = 16'h001F;
-                end 
-                else oled_data = 16'hF81F;
-            end
+            case(character_id)
+                2'd0:   begin 
+                        if((x-ult_x)*(x-ult_x) + (y-ult_y)*(y-ult_y) <= 16) begin
+                            visible = 1'b1;
+                            if((x-ult_x)*(x-ult_x) + (y-ult_y)*(y-ult_y) <= 9) begin
+                                if((x-ult_x)*(x-ult_x) + (y-ult_y)*(y-ult_y) <= 4) begin
+                                    oled_data = 16'h07FF;
+                                end 
+                                else oled_data = 16'h001F;
+                            end 
+                            else oled_data = 16'hF81F;
+                        end
+                end
+                2'd1:   begin
+                        dx = $signed({1'b0, x}) - $signed({1'b0, ult_x});
+                        dy = $signed({1'b0, y}) - $signed({1'b0, ult_y});
+
+                        if (direction) begin
+                            // Long axis tilted 15° downward toward the right
+                            if ((abs_s(4*dy - dx) <= 3) &&
+                                (abs_s(4*dx + dy) <= 20)) begin
+                                visible = 1'b1;
+                                oled_data = 16'hFF40;
+                            end
+                        end else begin
+                            // Mirror the blade when traveling left
+                            if ((abs_s(4*dy + dx) <= 3) &&
+                                (abs_s(4*dx - dy) <= 20)) begin
+                                visible = 1'b1;
+                                 oled_data = 16'hFF40;
+                            end
+                        end
+                end
+                2'd2:   begin 
+                        if((x-ult_x)*(x-ult_x) + (y-ult_y)*(y-ult_y) <= 36) begin
+                            visible = 1'b1;
+                            if((x-ult_x)*(x-ult_x) + (y-ult_y)*(y-ult_y) <= 25) begin
+                                if((x-ult_x)*(x-ult_x) + (y-ult_y)*(y-ult_y) <= 16) begin
+                                    oled_data = 16'h6666;
+                                end 
+                                else oled_data = 16'hBBBB;
+                            end 
+                            else oled_data = 16'hFFFF;
+                        end
+                end
+            endcase
         end
     end
 

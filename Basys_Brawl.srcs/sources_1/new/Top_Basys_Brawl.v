@@ -214,7 +214,7 @@ module Top_Basys_Brawl (
     wire[6:0] p1_meter;
     wire p1_meter_full;
 
-    special_top specials (
+    special_top p1_p2_specials (
         .CLOCK(CLOCK), .reset(game_reset),
         .tick(tick && fight_active),            // frozen outside the fight
         .playing(fight_active), .ko(ko_phase),
@@ -222,12 +222,13 @@ module Top_Basys_Brawl (
         .sw(code_switches),                                                        
         .fire_btn(fire_pulse   && fight_active),
         .def_btn (shield_pulse && fight_active),
-        .dash_input(dash_front_pulse && fight_active),
-        .dash_back_input(dash_back_pulse && fight_active),
+        .dash_fwd_input(dash_front_pulse && fight_active),
+        .dash_bkw_input(dash_back_pulse && fight_active),
         .ult_btn (ult_pulse && fight_active && p1_meter_full),
         .fighter_x(p_x), .feet_y(p_feet),
         .face_right(p_face), .state(p_state),
         .attack_top(p_at), .attack_bottom(p_ab),
+        .character_id(turn?p2_character:p1_character),
         .dash_active(p_dash_active), .dash_x(p_dash_x),
         .sp_visible(sp_visible), .sp_colour(sp_colour),
         .sp_led(sp_led),
@@ -253,12 +254,12 @@ module Top_Basys_Brawl (
         .sw(csp_led[9:0]),                      // CPU enters its own code: hint LEDs fed back
         .fire_btn(cpu_fireball && fight_active),
         .def_btn(cpu_shield && fight_active),
-        .dash_input(1'b0), .dash_back_input(1'b0),
+        .dash_fwd_input(1'b0), .dash_bkw_input(1'b0),
         .ult_btn(cpu_ult && fight_active && cpu_meter_full),
         .fighter_x(c_x), .feet_y(c_feet),
         .face_right(c_face), .state(c_state),
         .attack_top(c_at), .attack_bottom(c_ab),
-        .dash_active(), .dash_x(),
+        .dash_active(), .dash_x(), .character_id(cpu_character),
         .sp_visible(csp_visible), .sp_colour(csp_colour),
         .sp_led(csp_led),
         .fb_hit(cfb_hit), .ult_hit(cult_hit),

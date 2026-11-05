@@ -27,6 +27,7 @@ module special_fireball(
     input playing,                      // match is live
     input ko,                           // someone is KO'd
     input [12:0] pixel_index,           //pixel location
+    input [1:0] character_id,           // char choice
     output reg [15:0] oled_data,    // oled output
     output reg visible,             // oled output overlay
     // ---- btnC input ----
@@ -132,11 +133,15 @@ module special_fireball(
                 visible = 1'b1;
                 if((x-fireball_x)*(x-fireball_x) + (y-fireball_y)*(y-fireball_y) <= 9) begin
                     if((x-fireball_x)*(x-fireball_x) + (y-fireball_y)*(y-fireball_y) <= 4) begin
-                        oled_data = 16'hFFE0; //16'hFDAB; //yellow inside, red outside
+                        if(character_id == 2'd0) oled_data = 16'h81D8; //dull purple core
+                        else if(character_id == 2'd1) oled_data = 16'h042D; //dull green core
+                        else if (character_id == 2'd2) oled_data = 16'h73A0; // dull yellow core
                     end 
-                    else oled_data = 16'hFD20; //yellow inside, red outside
+                    oled_data = 16'hFFFF; //dull purple core
                 end 
-                else oled_data = 16'hF800;
+                if(character_id == 2'd0) oled_data = 16'hF87E; //pink
+                else if(character_id == 2'd1) oled_data = 16'h07FF; //cyan
+                else if (character_id == 2'd2) oled_data = 16'hC527; // gold 
             end
         end
     end

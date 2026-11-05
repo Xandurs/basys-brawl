@@ -106,10 +106,10 @@ module ult_manager(
         if(ult_used || reset) state <= 3'b000;
         else begin
         case(state) //state transition to make sure unlock code is written in sequence and not just combinational
-            3'b000: state = (sw == (10'b1 << hundreds))? 3'b001: state;
-            3'b001: state = (sw == ((10'b1 << hundreds)^(10'b1 << tens)))? 3'b011: state;
-            3'b011: state = (sw == expected_sw)? 3'b111: state;
-            3'b111: /*loop here until ult is over*/ state=state;
+            3'b000: state <= (sw == (10'b1 << hundreds))? 3'b001: state;
+            3'b001: state <= (sw == ((10'b1 << hundreds)^(10'b1 << tens)))? 3'b011: state;
+            3'b011: state <= (sw == expected_sw)? 3'b111: state;
+            3'b111: /*loop here until ult is over*/ state <= state;
         endcase
         end
     end

@@ -28,6 +28,7 @@ module special_def(
     input playing,                      // match is live
     input ko,                           // someone is KO'd
     input [12:0] pixel_index,           //pixel location
+    input [1:0] character_id,           // character customisation
     output reg [15:0] oled_data,    // oled output
     output reg visible,             // oled output overlay
     // ---- btnD input ----
@@ -132,7 +133,9 @@ module special_def(
         if(def_up) begin //if pending fire action to be completed
             if(left_wall || right_wall || up_wall || down_wall) begin
                 visible = 1'b1;
-                oled_data = 16'h07FF; //cyan shield
+                if(character_id == 2'd0) oled_data = 16'hF87E; //pink
+                else if(character_id == 2'd1) oled_data = 16'h07FF; //cyan shield
+                else if (character_id == 2'd2) oled_data = 16'hC527; // gold shield 
             end 
         end
     end
