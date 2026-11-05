@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-`timescale 1ns / 1ps
+
 // Basys Brawl HUD (Xander): health bars, super meter, phase text.
 module hud(
     input[6:0] x,
@@ -33,6 +33,7 @@ module hud(
     input[6:0] p1_hp,
     input[6:0] cpu_hp,
     input[6:0] p1_meter,
+    input[6:0] cpu_meter,
 
     output reg visible,
     output reg[15:0] colour
@@ -140,15 +141,18 @@ module hud(
     wire [7:0] p_w = (p1_hp    * 8'b00000010) / 8'b00000101;
     wire [7:0] c_w = (cpu_hp   * 8'b00000010) / 8'b00000101;
     wire [7:0] m_w = (p1_meter * 8'b00000010) / 8'b00000101;
+    wire [7:0] cm_w = (cpu_meter * 8'b00000010) / 8'b00000101;
 
     wire bar_row   = (y >= 6'b000001) && (y <= 6'b000100);                 // rows 1-4
     wire meter_row = (y >= 6'b000110) && (y <= 6'b000111);                 // rows 6-7
     wire p_box  = bar_row   && (x >= 7'b0000010) && (x <= 7'b0101001);     // x 2-41
     wire c_box  = bar_row   && (x >= 7'b0110110) && (x <= 7'b1011101);     // x 54-93
     wire m_box  = meter_row && (x >= 7'b0000010) && (x <= 7'b0101001);
+    wire cm_box = meter_row && (x >= 7'b0110110) && (x <= 7'b1011101);     // x 54-93
     wire p_fill = p_box && (x - 7'b0000010 < p_w);
     wire c_fill = c_box && (7'b1011101 - x < c_w);
     wire m_fill = m_box && (x - 7'b0000010 < m_w);
+    wire cm_fill = cm_box && (7'b1011101 - x < cm_w);                      // fills from the right
 
     reg [15:0] p_bar_col, c_bar_col;
     always @(*) begin
@@ -161,6 +165,7 @@ module hud(
         else                          c_bar_col = RED;
     end
     wire [15:0] m_col = (p1_meter == 7'b1100100) ? YELLOW : CYAN;
+    wire [15:0] cm_col = (cpu_meter == 7'b1100100) ? YELLOW : CYAN;
 
     //5. put it together 
     always @(*) begin
@@ -174,6 +179,8 @@ module hud(
             if (c_fill) begin visible = 1'b1; colour = c_bar_col; end
             if (m_box)  begin visible = 1'b1; colour = GREY;      end
             if (m_fill) begin visible = 1'b1; colour = m_col;     end
+            if (cm_box)  begin visible = 1'b1; colour = GREY;     end
+            if (cm_fill) begin visible = 1'b1; colour = cm_col;   end
         end
 
         if (phase == READY && digit_on) begin visible = 1'b1; colour = YELLOW; end

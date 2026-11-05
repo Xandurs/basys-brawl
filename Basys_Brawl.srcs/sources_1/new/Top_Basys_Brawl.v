@@ -124,6 +124,10 @@ module Top_Basys_Brawl (
     wire cpu_shield, cpu_ult;          
     wire [13:0] csp_led;               //CPU specials' ready flags
     wire cpu_shield_up;
+    wire [6:0] cpu_meter;              // CPU super meter (from combat)
+    wire       cpu_meter_full;
+    wire       cult_active, cult_hit;  // CPU ult shot
+    wire [6:0] cult_x, cult_y;
 
     // the CPU can't start a new action while punching, stunned, KO'd, or outside the fight
     wire cpu_busy = !fight_active ||
@@ -140,7 +144,7 @@ module Top_Basys_Brawl (
         .cpu_fireball(cpu_fireball), .cpu_dash(cpu_dash),
         .fireball_ready(csp_led[13]), .shield_ready(csp_led[12]),
         .dash_ready(1'b0),   // dash not linked to the fighter yet
-        .ult_ready(1'b0),    // CPU has no meter yet
+        .ult_ready(csp_led[10] && cpu_meter_full),    
         .cpu_shield(cpu_shield), .cpu_ult(cpu_ult)
     );
 
@@ -234,20 +238,20 @@ module Top_Basys_Brawl (
         .tick(tick && fight_active),
         .playing(fight_active), .ko(ko_phase),
         .pixel_index(pixel_index),
-        .sw(10'b0000000000),                    
+        .sw(csp_led[9:0]),                      // CPU enters its own code: hint LEDs fed back
         .fire_btn(cpu_fireball && fight_active),
-        .def_btn(cpu_shield && fight_active),  
-        .dash_input(1'b0),                       
-        .ult_btn(1'b0),                       //CPU ult not wired yet  
+        .def_btn(cpu_shield && fight_active),
+        .dash_input(1'b0),
+        .ult_btn(cpu_ult && fight_active && cpu_meter_full),
         .fighter_x(c_x), .feet_y(c_feet),
         .face_right(c_face), .state(c_state),
         .attack_top(c_at), .attack_bottom(c_ab),
         .dash_active(), .dash_x(),
         .sp_visible(csp_visible), .sp_colour(csp_colour),
         .sp_led(csp_led),
-        .fb_hit(cfb_hit), .ult_hit(1'b0),
+        .fb_hit(cfb_hit), .ult_hit(cult_hit),
         .fb_active(cfb_active), .fb_x(cfb_x), .fb_y(cfb_y),
-        .ult_active(), .ult_px(), .ult_py(),
+        .ult_active(cult_active), .ult_px(cult_x), .ult_py(cult_y),
         .shield_up(cpu_shield_up)
     );
 
@@ -270,15 +274,17 @@ module Top_Basys_Brawl (
 
         .p1_fb_active(fb_active),   .p1_fb_x(fb_x),    .p1_fb_y(fb_y),
         .p1_ult_active(ult_active), .p1_ult_x(ult_px), .p1_ult_y(ult_py),
-        .p1_shield(shield_up), .cpu_shield(cpu_shield_up),   
+        .p1_shield(shield_up), .cpu_shield(cpu_shield_up),
         .cpu_fb_active(cfb_active), .cpu_fb_x(cfb_x), .cpu_fb_y(cfb_y),
+        .cpu_ult_active(cult_active), .cpu_ult_x(cult_x), .cpu_ult_y(cult_y),
 
         .p1_hp(p1_hp), .cpu_hp(cpu_hp),
         .p1_hit(p1_hit), .p1_push_right(p1_push_right),
         .cpu_hit(cpu_hit), .cpu_push_right(cpu_push_right),
         .p1_fb_hit(fb_hit), .p1_ult_hit(ult_hit),
-        .cpu_fb_hit(cfb_hit),
-        .p1_meter(p1_meter), .p1_meter_full(p1_meter_full)
+        .cpu_fb_hit(cfb_hit), .cpu_ult_hit(cult_hit),
+        .p1_meter(p1_meter), .p1_meter_full(p1_meter_full),
+        .cpu_meter(cpu_meter), .cpu_meter_full(cpu_meter_full)
     );
 
     // =====================================================================
@@ -314,6 +320,7 @@ module Top_Basys_Brawl (
         .phase(phase), .count(count), .winner(winner), .timer(timer),
         .p1_hp(p1_hp), .cpu_hp(cpu_hp),
         .p1_meter(p1_meter),
+        .cpu_meter(cpu_meter),
         .turn(turn),
         .visible(hud_vis), .colour(hud_col)
     );
