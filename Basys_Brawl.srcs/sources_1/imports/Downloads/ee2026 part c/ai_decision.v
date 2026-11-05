@@ -7,6 +7,7 @@ module ai_decision(
     input [6:0] player_x,
     input [6:0] cpu_x,
     input [3:0] cpu_state,
+    input [3:0] player_state,
     input [7:0] random_num,
     input [1:0] difficulty,
     input [1:0] personality,
@@ -43,10 +44,10 @@ module ai_decision(
 
     always @(*) begin
         case (difficulty)
-            2'b00: reaction_limit = 15;   //easy
-            2'b01: reaction_limit = 9;    //medium
-            2'b10: reaction_limit = 5;     //hard
-            default: reaction_limit = 9;    //medium is the default
+            2'b00: reaction_limit = 10;   //easy
+            2'b01: reaction_limit = 5;    //medium
+            2'b10: reaction_limit = 2;     //hard
+            default: reaction_limit = 5;    //medium is the default
         endcase
     end
 
@@ -77,11 +78,47 @@ module ai_decision(
                 reaction_counter <= 0;  //reset reaction counter after action is taken
                 action_valid <= 1;  //indicate that an action has been decided
 
-                if (personality == AGGRESSIVE) begin   //AGGRESSIVE personality logic (ULT~8% DASH~23% PUNCH~55% BLOCK~14%)
+            //if (difficulty == 2'b10) begin
+                
+                
+                if ((distance <= 20) && (player_state == 4'd4) && (difficulty == 2'b10))  begin
+
+                    if (shield_ready)
+                        action <= SHIELD;
+                    else
+                        action <= BLOCK;
+
+    end
+             else if ((player_state == 4'd7) && (distance <= 20) && (difficulty == 2'b10)) begin
+                 if (shield_ready)
+                    action <= SHIELD;
+                 else
+                    action <= BLOCK;
+    end
+            else if ((player_state == 4'd5) && (difficulty == 2'b10)) begin
+               
+                if ((distance <= 20) && ult_ready)
+                    action <= ULT;
+
+                 else if (distance <= 20)
+                    action <= PUNCH;
+
+                else if (dash_ready)
+                     action <= DASH;
+
+                 else
+                     action <= APPROACH;
+    end
+
+            else if ((player_state == 4'd3) && (distance <= 20) && (difficulty == 2'b10)) begin
+                action <= RETREAT;
+    end
+
+                else if (personality == AGGRESSIVE) begin   //AGGRESSIVE personality logic 
                     if (distance <=20) begin
 
                         //rare ult
-                        if (ult_ready && random_num < 20) 
+                        if (ult_ready && random_num < 20)             //close range
                             action <= ULT;
 
                         else if (dash_ready && random_num < 70) //dash 
@@ -94,6 +131,19 @@ module ai_decision(
                         else                       
                             action <= BLOCK;  //block sometimes
                     end
+
+                    else if (distance <= 45) begin    //MID RANGE
+
+                        if (dash_ready && random_num < 100)
+                            action <= DASH;
+
+                        else if (random_num < 150)
+                            action <= JUMP;
+
+                        else
+                            action <= APPROACH;
+
+                     end
                     
                     else begin   //Player is far away, so approach or dash towards them
                         if (random_num < 50 && dash_ready)
@@ -110,7 +160,9 @@ module ai_decision(
 
                 else if (personality == DEFENSIVE) begin   //DEFENSIVE personality logic
                     if (distance <= 20) begin
-                        if (random_num < 80 && shield_ready)
+                         if ((random_num < 20) && ult_ready)
+                            action <= ULT;
+                        else if (random_num < 80 && shield_ready)
                             action <= SHIELD;
                         else if (random_num < 140)
                             action <= BLOCK;
@@ -121,10 +173,33 @@ module ai_decision(
                         else
                             action <= PUNCH;
                     end
+
+                    else if (distance <= 45) begin  //MID RANGE
+
+                        // Keep some space
+                    if (random_num < 80)
+                         action <= RETREAT;
+
+                        // Sometimes reposition
+                    else if (random_num < 125)
+                         action <= JUMP;
+
+                        // Occasionally attack
+                    else if (fireball_ready && random_num < 165)
+                        action <= FIREBALL;
+
+                        // Otherwise approach carefully
+                    else
+                         action <= APPROACH;
+
+                    end
+
                     
                     else begin
                         if ((random_num < 50) && fireball_ready)
                             action <= FIREBALL;
+                        else if (ult_ready && random_num < 105)
+                            action <= ULT;
                         else if (random_num < 140)
                             action <= APPROACH;
                         else if (random_num < 175)
@@ -149,11 +224,26 @@ module ai_decision(
                         else 
                         action <= PUNCH;
                      end
+
+                    else if (distance <= 45) begin
+                        if (fireball_ready && random_num < 110)
+                            action <= FIREBALL;
+                        else if (ult_ready && random_num < 140)
+                             action <= ULT;
+                        else if (random_num < 200)
+                            action <= RETREAT;
+                        else
+                             action <= JUMP;
+
+                    end
+
                     
                     else begin 
-                        if (random_num < 155 && fireball_ready)
+                        if (random_num < 135 && fireball_ready)
                             action <= FIREBALL;
-                        else if (random_num < 200)
+                        else if ((random_num < 175) && ult_ready)
+                            action <= ULT;
+                        else if (random_num < 210)
                             action <= JUMP;
                         else
                             action <= APPROACH;
