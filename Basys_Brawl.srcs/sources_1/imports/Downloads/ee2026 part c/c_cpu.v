@@ -15,12 +15,19 @@ module c_cpu(   //TESTING ONLY, DO NOT MODIFY or USE THIS MODULE IN YOUR DESIGN
     input [1:0] difficulty,
     input [1:0] personality,
 
+    input fireball_ready,
+    input dash_ready,
+    input shield_ready,
+    input ult_ready,
+
     // Outputs to Student A
     output cpu_left,
     output cpu_right,
     output cpu_block,
     output cpu_jump,
     output cpu_punch,
+    output cpu_shield,
+    output cpu_ult,
 
     // Outputs to Student B
     output cpu_fireball,
@@ -34,7 +41,7 @@ module c_cpu(   //TESTING ONLY, DO NOT MODIFY or USE THIS MODULE IN YOUR DESIGN
     wire [7:0] random_num;
 
     wire action_valid;
-    wire [2:0] action;
+    wire [3:0] action;
 
 
     // =========================================
@@ -69,6 +76,10 @@ module c_cpu(   //TESTING ONLY, DO NOT MODIFY or USE THIS MODULE IN YOUR DESIGN
         .personality(personality),
 
         .cpu_busy(cpu_busy),
+        .fireball_ready(fireball_ready),
+        .dash_ready(dash_ready),
+        .shield_ready(shield_ready),
+        .ult_ready(ult_ready),
 
         .action_valid(action_valid),
         .action(action)
@@ -97,7 +108,9 @@ module c_cpu(   //TESTING ONLY, DO NOT MODIFY or USE THIS MODULE IN YOUR DESIGN
         .cpu_punch(cpu_punch),
 
         .cpu_fireball(cpu_fireball),
-        .cpu_dash(cpu_dash)
+        .cpu_dash(cpu_dash),
+        .cpu_shield(cpu_shield),
+        .cpu_ult(cpu_ult)
     );
 
 endmodule
