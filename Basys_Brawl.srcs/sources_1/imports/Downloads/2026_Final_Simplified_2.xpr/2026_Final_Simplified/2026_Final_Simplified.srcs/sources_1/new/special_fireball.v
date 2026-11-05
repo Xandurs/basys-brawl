@@ -85,12 +85,13 @@ module special_fireball(
             displacement <= 0;
             countdown <= COOLDOWN - 1;
         end else begin
-            if (fire_pressed) fire_pending <= 1;       // runs every clock, so a short press is never missed
+            if (!playing || ko) fire_pending <= 0;
+            else if (fire_pressed) fire_pending <= 1;       // runs every clock, so a short press is never missed
 
             if (tick) begin                            // everything below runs once per game frame
                 fire_pending <= 0;                     // consumed (same idea as the fighter's punch_wait)
 
-                if (fire_pending && !fire_lock && !fired) begin
+                if ((fire_pending || fire_pressed) && playing && !ko && !fire_lock && !fired) begin
                     fired <= 1;
                     fire_lock <= 1;
                     direction <= face_right;

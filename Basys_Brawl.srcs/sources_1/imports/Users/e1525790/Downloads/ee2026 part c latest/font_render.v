@@ -312,6 +312,10 @@ module font_render(
                     5'b10000
                 };
 
+                             
+                8'h4B: get_glyph = {5'b10001, 5'b10010, 5'b10100,
+                                   5'b11000, 5'b10100, 5'b10010, 5'b10001};
+
                 // Space / unknown character
                 default: get_glyph = 35'b0;
 
@@ -328,7 +332,7 @@ module font_render(
     wire [2:0] row = pixel_y - char_y;      // 0..6
     wire [2:0] col = pixel_x - char_x;      // 0..4
 
-    wire inside = (pixel_x >= char_x) && (pixel_x < char_x + 7'd5) &&
+    wire in_glyph = (pixel_x >= char_x) && (pixel_x < char_x + 7'd5) &&
                   (pixel_y >= char_y) && (pixel_y < char_y + 6'd7);
 
     wire [34:0] glyph = get_glyph(char_code);
@@ -355,7 +359,7 @@ module font_render(
     // =====================================================
 
     always @(*) begin
-        if (inside) pixel_on = line[3'd4 - col];
+        if (in_glyph) pixel_on = line[3'd4 - col];
         else        pixel_on = 1'b0;
     end
 

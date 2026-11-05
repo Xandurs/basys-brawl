@@ -82,12 +82,13 @@ module special_def(
             cooldown_count <= COOLDOWN - 1;
             def_up_count <= def_up_timelength -1;
         end else begin      // if pressed, queue action
-            if (def_pressed) def_pending <= 1;       // runs every clock, so a short press is never missed
+            if (!playing || ko) def_pending <= 0;
+            else if (def_pressed) def_pending <= 1;       // runs every clock, so a short press is never missed
 
             if (tick) begin                            // everything below runs once per game frame
                 def_pending <= 0;                     // consumed (same idea as the fighter's punch_wait)
 
-                if (def_pending && !def_lock && !def_up) begin
+                if ((def_pending || def_pressed) && playing && !ko && !def_lock && !def_up) begin
                     def_up <= 1;      //if first press after cooldown, def_up will toggle high to indicate need for animation
                     def_lock <= 1;    //after 1st press, def lock will toggle high to engage cooldown period
                 end

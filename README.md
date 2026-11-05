@@ -29,18 +29,51 @@ Device: `xc7a35tcpg236-1` (Basys 3). The OLED goes on JB.
 
 ## Controls
 
+Connect a keyboard directly to the Basys 3 USB-A (J2) socket. The programming
+USB cable does not carry laptop keyboard events into this receiver.
+
 | Input | Action |
 |-------|--------|
-| BTNL / BTNR | walk |
-| BTNU | jump / menu up |
-| BTND | block / menu down |
-| BTNC | punch / menu select / continue |
-| SW10 | fireball |
-| SW11 | dash (not wired yet) |
-| SW12 | shield |
-| SW13 | ult (needs full meter + code on SW0-9) |
+| A / D | hold to walk left / right |
+| W | jump / menu up |
+| S | menu down |
+| J | hold to block |
+| I | punch (temporary default) |
+| K | fireball |
+| L | shield |
+| N / M | dash backwards / forwards relative to facing |
+| Enter | menu select / continue to P2 / return to menu |
+| U | ultimate (temporary default; full meter + code still required) |
+| 0–9 (top row) | toggle virtual ultimate-code switches 0–9 |
+| Backspace | clear virtual code switches |
 | SW14 | pause |
 | SW15 | reset |
+
+Letters work without Shift or Caps Lock. Actions fire once per press; release
+before pressing again. A/D/J remain held until their release is received.
+The physical push buttons and SW0–SW13 no longer control the main game.
+The original standalone Part*_Test_Top modules still use their original controls.
+
+Ultimate codes and LED hints retain their existing rules. For code 103, tap
+Backspace, then 1, 0, 3 in order, then U once the meter is full. Number keys
+stay toggled after release, matching switches. Codes clear at each new turn;
+Backspace also clears them before entering a new code after using an ultimate.
+
+The keyboard source and PS/2 constraints are already included in Basys_Brawl.xpr.
+Gameplay remains at the existing 30 Hz; the OLED clock is unchanged.
+
+See [KEYBOARD_TESTING.md](KEYBOARD_TESTING.md) for testing before committing.
+
+## Characters and combined actions
+
+After CPU personality selection, choose **Dr Chua**, **Prof Massimo** or
+**Karthi** separately for P1, P2 and the CPU. Use W/S and Enter. The menu
+shows names only; the selected 12 × 16 pixel sprites appear in the fight.
+
+Both fighters can walk while punching/blocking, and punch or block in the air.
+Hitstun, KO and punch recovery retain priority. All characters use identical
+body boxes, punch reach and damage. See [CHARACTER_UPDATE.md](CHARACTER_UPDATE.md)
+for exact rules and validation limits, and [the sprite preview](docs/character_preview.png).
 
 ## Workflow
 

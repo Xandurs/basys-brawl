@@ -29,6 +29,7 @@ module special_dash(
     input [12:0] pixel_index,           //pixel location
     
     // ---- btnC input ----
+    input dash_backward,                                                   
     input dash_pressed,                 // takes sw[11] as input, detect high to activate dash
     output reg dashing,                 // used to output dashing state to fighter mod so that fighter mod check for dashes and update x, before executing any other movement
     // ---- from THIS player's fighter (existing outputs) ----
@@ -59,6 +60,7 @@ module special_dash(
     //reg dashing = 0; //dash active and moving
     reg dash_input; reg dash_input_count = 0;
     reg dash_pending;
+    reg pending_backward = 0;
     reg [7:0] countdown = COOLDOWN -1;        //countdown inside sequential block
     reg direction = 0; // to check direction;
     reg [6:0] x,y; // x and y axis value
@@ -74,20 +76,26 @@ module special_dash(
             dist_covered <= 25;
             countdown <= COOLDOWN -1;
             dash_pending <= 0;
+            pending_backward <= 0;
             displacement <= 0;
             current_x <= fighter_x;
         end else begin
-            if (dash_pressed) begin
+            if (!playing || ko) dash_pending <= 0;
+            else if (dash_pressed) begin
+                pending_backward <= dash_backward;
                 dash_pending <= 1;       // runs every clock, so a short press is never missed
             end
             if (tick) begin                            // everything below runs once per game frame
                 dash_pending <= 0;                     // consumed (same idea as the fighter's punch_wait)
 
-                if (dash_pending && !dash_lock && !dashing) begin
+                if ((dash_pending || dash_pressed) && playing && !ko &&
+                    state != HITSTUN && state != KO && !dash_lock && !dashing) begin
                     dashing <= 1;
                     current_x <= fighter_x;
                     dash_lock <= 1;
-                    direction <= face_right;
+                    if (dash_pressed ? dash_backward : pending_backward)
+                        direction <= !face_right;
+                    else direction <= face_right;
 
                 end
 
@@ -116,5 +124,5 @@ module special_dash(
                 end
             end
     end
-    
+
 endmodule

@@ -66,7 +66,9 @@ module ai_decision(
                 reaction_counter <= 0;  //reset reaction counter after action is taken
                 action_valid <= 1;  //indicate that an action has been decided
 
-                if (personality == AGGRESSIVE) begin   //AGGRESSIVE personality logic
+                if (random_num >= 240 && cpu_state != 4'd2) begin
+                    action <= JUMP;
+                end else if (personality == AGGRESSIVE) begin   //AGGRESSIVE personality logic
                     if (distance <=20) begin
                          if (random_num < 190)
                             action <= PUNCH;

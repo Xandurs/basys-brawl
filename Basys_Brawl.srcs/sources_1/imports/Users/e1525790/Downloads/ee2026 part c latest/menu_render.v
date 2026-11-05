@@ -8,6 +8,7 @@ module menu_render(
     input [1:0] difficulty,
     input [1:0] personality,
     input [1:0] round_count,
+    input [1:0] character_slot, character_choice,
 
     output reg [15:0] pixel_data
 );
@@ -16,7 +17,7 @@ module menu_render(
     parameter TITLE       = 2'b00;
     parameter DIFFICULTY  = 2'b01;
     parameter PERSONALITY = 2'b10;
-    parameter ROUNDS      = 2'b11;
+    parameter CHARACTER   = 2'b11;
 
     // Difficulty values
     parameter EASY   = 2'b00;
@@ -30,6 +31,7 @@ module menu_render(
 
 
     reg [7:0] char_code;
+    reg [127:0] name_line;
     
     wire [11:0] mul43    = pixel_x * 6'd43;             // x*43
     wire [3:0]  cell_col = mul43[11:8];                  // = x/6
@@ -68,6 +70,7 @@ module menu_render(
         char_code = 8'h20;
 
         selected_line = 0;
+        name_line = "                ";
 
 
         case (menu_state)
@@ -316,95 +319,25 @@ module menu_render(
             // ROUND COUNT
             // ========================================
 
-            ROUNDS: begin
-
-                // ROUNDS
+            CHARACTER: begin
                 if (cell_row == 0) begin
-
-                    case (cell_col)
-
-                        5:  char_code = "R";
-                        6:  char_code = "O";
-                        7:  char_code = "U";
-                        8:  char_code = "N";
-                        9:  char_code = "D";
-                        10: char_code = "S";
-
+                    case (character_slot)
+                        0: name_line = "  P1 CHARACTER  ";
+                        1: name_line = "  P2 CHARACTER  ";
+                        default: name_line = " CPU CHARACTER  ";
                     endcase
-
+                end else if (cell_row == 2) begin
+                    name_line = "   DR CHUA      ";
+                    selected_line = (character_choice == 0);
+                end else if (cell_row == 4) begin
+                    name_line = "   PROF MASSIMO ";
+                    selected_line = (character_choice == 1);
+                end else if (cell_row == 6) begin
+                    name_line = "   KARTHI       ";
+                    selected_line = (character_choice == 2);
                 end
-
-
-                // 1 ROUND
-                else if (cell_row == 2) begin
-
-                    selected_line = (round_count == 1);
-
-                    if ((cell_col == 3) &&
-                        (round_count == 1))
-                        char_code = ">";
-
-                    if (cell_col == 5)
-                        char_code = "1";
-
-                    case (cell_col)
-                        7:  char_code = "R";
-                        8:  char_code = "O";
-                        9:  char_code = "U";
-                        10: char_code = "N";
-                        11: char_code = "D";
-                    endcase
-
-                end
-
-
-                // 2 ROUNDS
-                else if (cell_row == 4) begin
-
-                    selected_line = (round_count == 2);
-
-                    if ((cell_col == 3) &&
-                        (round_count == 2))
-                        char_code = ">";
-
-                    if (cell_col == 5)
-                        char_code = "2";
-
-                    case (cell_col)
-                        7:  char_code = "R";
-                        8:  char_code = "O";
-                        9:  char_code = "U";
-                        10: char_code = "N";
-                        11: char_code = "D";
-                        12: char_code = "S";
-                    endcase
-
-                end
-
-
-                // 3 ROUNDS
-                else if (cell_row == 6) begin
-
-                    selected_line = (round_count == 3);
-
-                    if ((cell_col == 3) &&
-                        (round_count == 3))
-                        char_code = ">";
-
-                    if (cell_col == 5)
-                        char_code = "3";
-
-                    case (cell_col)
-                        7:  char_code = "R";
-                        8:  char_code = "O";
-                        9:  char_code = "U";
-                        10: char_code = "N";
-                        11: char_code = "D";
-                        12: char_code = "S";
-                    endcase
-
-                end
-
+                char_code = name_line >> ((15 - cell_col) * 8);
+                if (selected_line && cell_col == 1) char_code = ">";
             end
 
         endcase
