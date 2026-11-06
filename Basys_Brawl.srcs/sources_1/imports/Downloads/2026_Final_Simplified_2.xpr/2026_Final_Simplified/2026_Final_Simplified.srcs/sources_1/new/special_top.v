@@ -9,6 +9,7 @@ module special_top(
     input dash_bkw_input,                                      
     input dash_fwd_input,                  // raw dash switch (edge detect moved in here)
     input ult_btn,                     // ult button (pick one that doesn't also punch)
+    input ult_meter_full,              // check ult guage
 
     // from the player's fighter
     input [6:0] fighter_x, feet_y,
@@ -109,6 +110,7 @@ module special_top(
         .sw(sw),
         .btnC(ult_btn),                // unused inside manager
         .ult_used(used1),
+        .meter_full(ult_meter_full),
         .ult_unlocked(unl1),
         .led(sp_led[9:0])
     );
