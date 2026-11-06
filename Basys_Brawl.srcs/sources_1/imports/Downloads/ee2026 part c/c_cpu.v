@@ -9,6 +9,7 @@ module c_cpu(   //TESTING ONLY, DO NOT MODIFY or USE THIS MODULE IN YOUR DESIGN
     input [6:0] player_x,
     input [6:0] cpu_x,
     input [3:0] cpu_state,
+    input[3:0] player_state,
     input cpu_busy,
 
     // Eventually comes from your menu
@@ -69,6 +70,7 @@ module c_cpu(   //TESTING ONLY, DO NOT MODIFY or USE THIS MODULE IN YOUR DESIGN
         .cpu_x(cpu_x),
 
         .cpu_state(cpu_state),
+        .player_state(player_state),
 
         .random_num(random_num),
 
