@@ -28,6 +28,7 @@ module special_def(
     input playing,                      // match is live
     input ko,                           // someone is KO'd
     input [12:0] pixel_index,           //pixel location
+    input [1:0] character_id,           // character customisation
     output reg [15:0] oled_data,    // oled output
     output reg visible,             // oled output overlay
     // ---- btnD input ----
@@ -82,12 +83,13 @@ module special_def(
             cooldown_count <= COOLDOWN - 1;
             def_up_count <= def_up_timelength -1;
         end else begin      // if pressed, queue action
-            if (def_pressed) def_pending <= 1;       // runs every clock, so a short press is never missed
+            if (!playing || ko) def_pending <= 0;
+            else if (def_pressed) def_pending <= 1;       // runs every clock, so a short press is never missed
 
             if (tick) begin                            // everything below runs once per game frame
                 def_pending <= 0;                     // consumed (same idea as the fighter's punch_wait)
 
-                if (def_pending && !def_lock && !def_up) begin
+                if ((def_pending || def_pressed) && playing && !ko && !def_lock && !def_up) begin
                     def_up <= 1;      //if first press after cooldown, def_up will toggle high to indicate need for animation
                     def_lock <= 1;    //after 1st press, def lock will toggle high to engage cooldown period
                 end
@@ -131,7 +133,9 @@ module special_def(
         if(def_up) begin //if pending fire action to be completed
             if(left_wall || right_wall || up_wall || down_wall) begin
                 visible = 1'b1;
-                oled_data = 16'h07FF; //cyan shield
+                if(character_id == 2'd0) oled_data = 16'hF87E; //pink
+                else if(character_id == 2'd1) oled_data = 16'h07FF; //cyan shield
+                else if (character_id == 2'd2) oled_data = 16'hC527; // gold shield 
             end 
         end
     end

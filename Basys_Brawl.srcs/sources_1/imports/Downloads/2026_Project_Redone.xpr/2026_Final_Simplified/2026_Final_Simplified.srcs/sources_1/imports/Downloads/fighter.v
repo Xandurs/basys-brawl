@@ -6,6 +6,8 @@ module fighter #(parameter START_X = 12, START_FACE = 1)(
     input jump_pressed, punch_pressed, special_pressed,
     input [6:0] opponent_x,
     input hit_valid, hit_push_right, ko,
+    input dash_active,
+    input [6:0] dash_x,
     output reg [6:0] x,
     output [6:0] feet_y,
     output reg [3:0] state,
@@ -28,7 +30,7 @@ module fighter #(parameter START_X = 12, START_FACE = 1)(
     assign body_right = x + 7'd12;
     assign body_top = feet_y - 7'd16;
     assign body_bottom = feet_y;
-    assign blocking = playing && (state == BLOCK);
+    assign blocking = playing && !ko && (state == BLOCK);
     assign attack_active = playing && !ko && (state == PUNCH)
                            && (action_frame >= 3) && (action_frame <= 5);
     assign attack_top = feet_y - 7'd12;
@@ -69,12 +71,19 @@ module fighter #(parameter START_X = 12, START_FACE = 1)(
             height <= 0; speed <= 0; airborne <= 0;
             push_right <= 0; action_frame <= 0;
         end else if (playing && tick) begin
-            if (airborne && !ko && state != KO) begin
-                if (height + speed <= 0) begin
-                    height <= 0; speed <= 0; airborne <= 0;
-                end else begin
-                    height <= height + speed;
-                    speed <= speed - 1;
+                                                                       
+            if (!ko && state != KO) begin
+                if (airborne) begin
+                    if (height + speed <= 0) begin
+                        height <= 0; speed <= 0; airborne <= 0;
+                    end else begin
+                        height <= height + speed;
+                        speed <= speed - 1;
+                    end
+                end else if ((jump_pressed || jump_wait) && state != HITSTUN &&
+                             state != SPECIAL && !hit_valid && !hit_wait &&
+                             !(special_pressed || special_wait)) begin
+                    airborne <= 1; height <= 0; speed <= 8;
                 end
             end
             if (ko || state == KO) state <= KO;
@@ -97,34 +106,37 @@ module fighter #(parameter START_X = 12, START_FACE = 1)(
                         end
                         if (action_frame == 11) begin
                             action_frame <= 0;
-                            if (airborne) state <= JUMP;
+                            if (block_held) state <= BLOCK;
+                            else if (airborne || jump_pressed || jump_wait) state <= JUMP;
+                            else if (left_held != right_held) state <= WALK;
                             else state <= IDLE;
                         end else action_frame <= action_frame + 1;
                     end
                     default: begin
                         if (opponent_x > x) face_right <= 1;
                         else if (opponent_x < x) face_right <= 0;
-                        if (!airborne && block_held) state <= BLOCK;
+                        if (block_held) state <= BLOCK;
                         else if (!airborne && (special_pressed || special_wait)) begin
                             state <= SPECIAL; action_frame <= 0;
-                        end else if (!airborne && (punch_pressed || punch_wait)) begin
+                        end else if (punch_pressed || punch_wait) begin
                             state <= PUNCH; action_frame <= 0; attack_start <= 1;
-                        end else if (!airborne && (jump_pressed || jump_wait)) begin
-                            state <= JUMP; airborne <= 1; height <= 0; speed <= 8;
                         end else begin
-                            if (airborne) state <= JUMP;
+                            if (airborne || jump_pressed || jump_wait) state <= JUMP;
+                            else if (left_held != right_held) state <= WALK;
                             else state <= IDLE;
-                            if (left_held && !right_held && x > 0) begin
-                                x <= x - 1;
-                                if (!airborne) state <= WALK;
-                            end else if (right_held && !left_held && x < 84) begin
-                                x <= x + 1;
-                                if (!airborne) state <= WALK;
-                            end
                         end
                     end
                 endcase
             end
+                                                                              
+                                                                            
+            if (!ko && state != KO && state != HITSTUN && state != SPECIAL &&
+                !hit_valid && !hit_wait && !(special_pressed || special_wait)) begin
+                if (left_held && !right_held && x > 0) x <= x - 1;
+                else if (right_held && !left_held && x < 84) x <= x + 1;
+            end
+            if (dash_active && !ko && state != KO && state != HITSTUN &&
+                !hit_valid && !hit_wait) x <= dash_x;
         end
     end
 endmodule

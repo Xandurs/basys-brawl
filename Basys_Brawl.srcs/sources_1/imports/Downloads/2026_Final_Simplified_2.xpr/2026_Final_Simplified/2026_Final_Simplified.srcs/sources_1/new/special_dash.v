@@ -29,7 +29,8 @@ module special_dash(
     input [12:0] pixel_index,           //pixel location
     
     // ---- btnC input ----
-    input dash_pressed,                 // takes sw[11] as input, detect high to activate dash
+    input dash_pressed_bkw,                // takes keyboard N as input, detects high to activate back dash                                 
+    input dash_pressed_fwd,                 // takes Keyboard M as input, detect high to activate front dash
     output reg dashing,                 // used to output dashing state to fighter mod so that fighter mod check for dashes and update x, before executing any other movement
     // ---- from THIS player's fighter (existing outputs) ----
     input [6:0] fighter_x,              // x-axis position of left edge
@@ -44,21 +45,21 @@ module special_dash(
 
     // ---- out to the board ----
     output dash_ready ,                    // cooldown finished (drive an LED)
-    output reg [6:0] current_x
+    output reg [6:0] current_x             // tracks current x position of body
 );
 
     // ---- settings you may override per instance ----
     parameter COOLDOWN = 240;           // 8s at 30 ticks/s
-    reg [4:0] dist_covered = 19;     // pixels covered
+    reg [4:0] dist_covered = 25;     // pixels covered
     
     // ---- fixed constants (must match the fighter) ----
     localparam IDLE = 0, WALK = 1, JUMP = 2, BLOCK = 3;
     localparam PUNCH = 4, HITSTUN = 5, KO = 6, SPECIAL = 7;
     
     reg dash_lock = 0; //dash lock when cooldown
-    //reg dashing = 0; //dash active and moving
-    reg dash_input; reg dash_input_count = 0;
-    reg dash_pending;
+    reg dash_dir = 0; //dash direction
+    reg dash_input; //track input
+    reg dash_pending; //track pending for non-tick cycle inputs
     reg [7:0] countdown = COOLDOWN -1;        //countdown inside sequential block
     reg direction = 0; // to check direction;
     reg [6:0] x,y; // x and y axis value
@@ -67,7 +68,7 @@ module special_dash(
     assign dash_ready = !dash_lock;
     
     always @(posedge CLOCK) begin
-        if (reset) begin
+        if (reset) begin //basically reset all to default
             dashing <= 0;
             dash_lock <= 0;
             direction <= face_right;
@@ -76,18 +77,28 @@ module special_dash(
             dash_pending <= 0;
             displacement <= 0;
             current_x <= fighter_x;
+            dash_dir <= 0;
         end else begin
-            if (dash_pressed) begin
-                dash_pending <= 1;       // runs every clock, so a short press is never missed
+            if (!playing || ko) begin 
+                dash_pending <= 0; 
+                dist_covered <= 25;
             end
+
+            else if ((dash_pressed_fwd && !dash_pressed_bkw) || (!dash_pressed_fwd && dash_pressed_bkw)) begin
+                dash_pending <= 1;       // runs every clock, so a short press is never missed
+                if(dash_pressed_fwd) dash_dir <= 1;
+                else if (dash_pressed_bkw) dash_dir <= 0;
+            end
+
             if (tick) begin                            // everything below runs once per game frame
                 dash_pending <= 0;                     // consumed (same idea as the fighter's punch_wait)
 
-                if (dash_pending && !dash_lock && !dashing) begin
+                if ((dash_pending || dash_pressed_fwd || dash_pressed_bkw) && playing && !ko &&
+                    state != HITSTUN && state != KO && !dash_lock && !dashing) begin
                     dashing <= 1;
                     current_x <= fighter_x;
                     dash_lock <= 1;
-                    direction <= face_right;
+                    direction <= (dash_dir)? face_right: ~face_right;
 
                 end
 
@@ -110,11 +121,11 @@ module special_dash(
 
                 if (countdown == 0) begin
                     countdown <= COOLDOWN - 1;
-                    if (!(state == HITSTUN || state == KO))
+                    if ((state != HITSTUN && state != KO) || reset)
                         dash_lock <= 0;
                     end
                 end
             end
     end
-    
+
 endmodule

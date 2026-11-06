@@ -25,3 +25,6 @@ usage_statistics_webtalk.*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Keyboard simulation outputs
+keyboard_test_build/
