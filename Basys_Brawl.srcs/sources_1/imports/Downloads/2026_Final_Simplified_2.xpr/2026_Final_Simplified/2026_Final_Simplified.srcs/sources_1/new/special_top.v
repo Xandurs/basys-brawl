@@ -37,6 +37,7 @@ module special_top(
     output fb_active,
     output [6:0] fb_x, fb_y,
     output ult_active,
+    output ult_used_out,        //send signal to clear buffer that stores past ult code keyyed 
     output [6:0] ult_px, ult_py,
     output shield_up
 );
@@ -132,6 +133,7 @@ module special_top(
        
     );
     assign sp_led[10] = ult_ready;
+    assign ult_used_out = used1;
 
     // ---------- merge overlays (later line = higher priority) ----------
     always @(*) begin

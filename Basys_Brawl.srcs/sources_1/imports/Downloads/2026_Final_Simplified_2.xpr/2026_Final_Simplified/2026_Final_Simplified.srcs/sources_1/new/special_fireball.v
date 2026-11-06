@@ -136,12 +136,14 @@ module special_fireball(
                         if(character_id == 2'd0) oled_data = 16'h81D8; //dull purple core
                         else if(character_id == 2'd1) oled_data = 16'h042D; //dull green core
                         else if (character_id == 2'd2) oled_data = 16'h73A0; // dull yellow core
-                    end 
-                    oled_data = 16'hFFFF; //dull purple core
+                    end
+                    else oled_data = 16'hFFFF; //white core
                 end 
+                else begin
                 if(character_id == 2'd0) oled_data = 16'hF87E; //pink
                 else if(character_id == 2'd1) oled_data = 16'h07FF; //cyan
                 else if (character_id == 2'd2) oled_data = 16'hC527; // gold 
+                end
             end
         end
     end

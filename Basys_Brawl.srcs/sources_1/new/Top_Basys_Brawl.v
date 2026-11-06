@@ -59,10 +59,11 @@ module Top_Basys_Brawl (
     wire enter_pressed = key_pressed[9], ult_pulse = key_pressed[20];
     wire down_pressed = key_pressed[21];
     wire p_dash_active;
+    wire p1_ult_used;
     wire [6:0] p_dash_x;
 
     keyboard_controls keyboard (
-        .CLOCK(CLOCK), .reset(sys_reset), .code_reset(game_reset),
+        .CLOCK(CLOCK), .reset(sys_reset), .code_reset(game_reset || p1_ult_used),
         .PS2Clk(PS2Clk), .PS2Data(PS2Data),
         .held(key_held), .pressed(key_pressed), .code_sw(code_switches)
     );
@@ -252,6 +253,7 @@ module Top_Basys_Brawl (
         .fb_hit(fb_hit), .ult_hit(ult_hit),
         .fb_active(fb_active), .fb_x(fb_x), .fb_y(fb_y),
         .ult_active(ult_active), .ult_px(ult_px), .ult_py(ult_py),
+        .ult_used_out(p1_ult_used),
         .shield_up(shield_up)
     );
 
@@ -283,6 +285,7 @@ module Top_Basys_Brawl (
         .fb_hit(cfb_hit), .ult_hit(cult_hit),
         .fb_active(cfb_active), .fb_x(cfb_x), .fb_y(cfb_y),
         .ult_active(cult_active), .ult_px(cult_x), .ult_py(cult_y),
+        .ult_used_out(),
         .shield_up(cpu_shield_up)
     );
 

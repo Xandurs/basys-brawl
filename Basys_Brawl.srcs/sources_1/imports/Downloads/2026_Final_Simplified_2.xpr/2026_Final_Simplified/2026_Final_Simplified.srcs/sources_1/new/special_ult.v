@@ -197,10 +197,9 @@ module special_ult(
                         end
 
                         2'd2:   begin
-                                if (ult_x < 100 && ult_x > 0 && !ult_hit) begin
-                                    if(ult_x > 0 || ult_x < 100 || !ult_hit) ult_x <= (direction) ? ult_x + projectile_2speed : ult_x - projectile_2speed;
-                                    else ult_executing <= 0;
-                                end
+                                if (ult_x > 100 || ult_x < 1 || ult_hit) ult_executing <= 0;
+                                else ult_x <= (direction) ? ult_x + projectile_2speed : ult_x - projectile_2speed;
+                                
                         end
                     endcase
                 end
