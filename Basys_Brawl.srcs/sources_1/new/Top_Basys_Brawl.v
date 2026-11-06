@@ -59,10 +59,11 @@ module Top_Basys_Brawl (
     wire enter_pressed = key_pressed[9], ult_pulse = key_pressed[20];
     wire down_pressed = key_pressed[21];
     wire p_dash_active;
+    wire p1_ult_used;
     wire [6:0] p_dash_x;
 
     keyboard_controls keyboard (
-        .CLOCK(CLOCK), .reset(sys_reset), .code_reset(game_reset),
+        .CLOCK(CLOCK), .reset(sys_reset), .code_reset(game_reset || p1_ult_used),
         .PS2Clk(PS2Clk), .PS2Data(PS2Data),
         .held(key_held), .pressed(key_pressed), .code_sw(code_switches)
     );
@@ -204,17 +205,33 @@ module Top_Basys_Brawl (
     wire [5:0] sy = pixel_index / 96;
 
     // =====================================================================
+    // KARTHI: BACKGROUND
+    // =====================================================================
+    wire bg_visible;
+    wire [15:0] bg_colour;
+    background bg (
+        .CLOCK(CLOCK),
+        .reset(sys_reset),
+        .tick(tick),
+        .playing(!in_menu),
+        .ko(ko_phase),
+        .pixel_index(pixel_index),
+        .visible(bg_visible),
+        .oled_data(bg_colour)
+    );
+
+    // =====================================================================
     // KARTHI: SPECIALS - player copy
     // =====================================================================
-    wire        fb_active, ult_active, shield_up, fb_hit, ult_hit;
-    wire [6:0]  fb_x, fb_y, ult_px, ult_py;
-    wire        sp_visible;
+    wire fb_active, ult_active, shield_up, fb_hit, ult_hit;
+    wire [6:0] fb_x, fb_y, ult_px, ult_py;
+    wire sp_visible;
     wire [15:0] sp_colour;
     wire [13:0] sp_led;
     wire[6:0] p1_meter;
     wire p1_meter_full;
 
-    special_top specials (
+    special_top p1_p2_specials (
         .CLOCK(CLOCK), .reset(game_reset),
         .tick(tick && fight_active),            // frozen outside the fight
         .playing(fight_active), .ko(ko_phase),
@@ -222,27 +239,30 @@ module Top_Basys_Brawl (
         .sw(code_switches),                                                        
         .fire_btn(fire_pulse   && fight_active),
         .def_btn (shield_pulse && fight_active),
-        .dash_input(dash_front_pulse && fight_active),
-        .dash_back_input(dash_back_pulse && fight_active),
+        .dash_fwd_input(dash_front_pulse && fight_active),
+        .dash_bkw_input(dash_back_pulse && fight_active),
         .ult_btn (ult_pulse && fight_active && p1_meter_full),
+        .ult_meter_full(p1_meter_full),
         .fighter_x(p_x), .feet_y(p_feet),
         .face_right(p_face), .state(p_state),
         .attack_top(p_at), .attack_bottom(p_ab),
+        .character_id(turn?p2_character:p1_character),
         .dash_active(p_dash_active), .dash_x(p_dash_x),
         .sp_visible(sp_visible), .sp_colour(sp_colour),
         .sp_led(sp_led),
         .fb_hit(fb_hit), .ult_hit(ult_hit),
         .fb_active(fb_active), .fb_x(fb_x), .fb_y(fb_y),
         .ult_active(ult_active), .ult_px(ult_px), .ult_py(ult_py),
+        .ult_used_out(p1_ult_used),
         .shield_up(shield_up)
     );
 
     // =====================================================================
     // KARTHI: SPECIALS - CPU copy (fireball only until Yuhan adds shield / ult)
     // =====================================================================
-    wire        cfb_active, cfb_hit;
+    wire cfb_active, cfb_hit;
     wire [6:0]  cfb_x, cfb_y;
-    wire        csp_visible;
+    wire csp_visible;
     wire [15:0] csp_colour;
 
     special_top cpu_specials (
@@ -253,17 +273,19 @@ module Top_Basys_Brawl (
         .sw(csp_led[9:0]),                      // CPU enters its own code: hint LEDs fed back
         .fire_btn(cpu_fireball && fight_active),
         .def_btn(cpu_shield && fight_active),
-        .dash_input(1'b0), .dash_back_input(1'b0),
+        .dash_fwd_input(1'b0), .dash_bkw_input(1'b0),
         .ult_btn(cpu_ult && fight_active && cpu_meter_full),
+        .ult_meter_full(cpu_meter_full),
         .fighter_x(c_x), .feet_y(c_feet),
         .face_right(c_face), .state(c_state),
         .attack_top(c_at), .attack_bottom(c_ab),
-        .dash_active(), .dash_x(),
+        .dash_active(), .dash_x(), .character_id(cpu_character),
         .sp_visible(csp_visible), .sp_colour(csp_colour),
         .sp_led(csp_led),
         .fb_hit(cfb_hit), .ult_hit(cult_hit),
         .fb_active(cfb_active), .fb_x(cfb_x), .fb_y(cfb_y),
         .ult_active(cult_active), .ult_px(cult_x), .ult_py(cult_y),
+        .ult_used_out(),
         .shield_up(cpu_shield_up)
     );
 
@@ -353,6 +375,7 @@ module Top_Basys_Brawl (
     reg [15:0] colour;
     always @(*) begin
         colour = 16'h0000;                       // black sky
+        if (bg_visible)  colour = bg_colour;     // background
         if (sy >= 60)    colour = 16'h07E0;      // green ground
         if (c_vis)       colour = c_col;         // Oliver: CPU fighter
         if (p_vis)       colour = p_col;         // Oliver: player fighter

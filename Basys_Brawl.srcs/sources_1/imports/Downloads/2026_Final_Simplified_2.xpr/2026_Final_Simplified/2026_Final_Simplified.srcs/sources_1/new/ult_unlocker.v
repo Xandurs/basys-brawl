@@ -27,6 +27,7 @@ module ult_manager(
     input [9:0] sw,
     input btnC,
     input ult_used,
+    input meter_full,
     output ult_unlocked,
     output [9:0] led
     );
@@ -73,11 +74,12 @@ module ult_manager(
     assign ones = selected_code%10; // last digit from right
     assign expected_sw = ((10'b1 << hundreds) ^ (10'b1 << tens) ^ (10'b1 << ones)); //expected switch configuration
  
-    assign led = (state == 3'b000)? (10'b1 << hundreds):
+    assign led = !meter_full ? 10'b0 :
+                 (state == 3'b000)? (10'b1 << hundreds):
                  (state == 3'b001)? ((10'b1 << hundreds)^(10'b1 << tens)):
                  expected_sw;
     
-    assign ult_unlocked = (state == 3'b111);
+    assign ult_unlocked = meter_full && (state == 3'b111);
     
     //FSM for each unlock code//
     always @(*) begin
@@ -103,13 +105,13 @@ module ult_manager(
     
     
     always @(posedge clk) begin
-        if(ult_used || reset) state <= 3'b000;
+        if(ult_used || reset || !meter_full) state <= 3'b000;
         else begin
         case(state) //state transition to make sure unlock code is written in sequence and not just combinational
-            3'b000: state = (sw == (10'b1 << hundreds))? 3'b001: state;
-            3'b001: state = (sw == ((10'b1 << hundreds)^(10'b1 << tens)))? 3'b011: state;
-            3'b011: state = (sw == expected_sw)? 3'b111: state;
-            3'b111: /*loop here until ult is over*/ state=state;
+            3'b000: state <= (sw == (10'b1 << hundreds))? 3'b001: state;
+            3'b001: state <= (sw == ((10'b1 << hundreds)^(10'b1 << tens)))? 3'b011: state;
+            3'b011: state <= (sw == expected_sw)? 3'b111: state;
+            3'b111: /*loop here until ult is over*/ state <= state;
         endcase
         end
     end
