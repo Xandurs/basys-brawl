@@ -130,7 +130,7 @@ module Top_Basys_Brawl (
 
     c_cpu yuhan_cpu (
         .CLOCK(CLOCK), .reset(game_reset), .tick(tick),
-        .player_x(p_x), .cpu_x(c_x), .cpu_state(c_state), .cpu_busy(cpu_busy),
+        .player_x(p_x), .cpu_x(c_x), .cpu_state(c_state), .player_state(player_state), .cpu_busy(cpu_busy),
         .difficulty(difficulty), .personality(personality),
         .cpu_left(cpu_left), .cpu_right(cpu_right), .cpu_block(cpu_block),
         .cpu_jump(cpu_jump), .cpu_punch(cpu_punch),
