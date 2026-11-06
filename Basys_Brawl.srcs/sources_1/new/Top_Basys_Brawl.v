@@ -398,12 +398,15 @@ module Top_Basys_Brawl (
     // =====================================================================
     // LEDS: each "ready" LED sits above its own switch
     // =====================================================================
-    assign LED[9:0]  = sp_led[9:0];                    // Karthi: ult code hints (above SW0-SW9)
-    assign LED[10]   = sp_led[13];                     // fireball ready  (above SW10)
-    assign LED[11]   = sp_led[11];                     // dash ready      (above SW11)
-    assign LED[12]   = sp_led[12];                     // shield ready    (above SW12)
-    assign LED[13]   = sp_led[10] && p1_meter_full;    // ult ready       (above SW13): code + full meter
-    assign LED[14]   = (c_state == 4'b0101);           // CPU in HITSTUN
-    assign LED[15]   = (p_state == 4'b0101);           // player in HITSTUN
+
+    wire show_leds = fight_active || (phase == 3'b011);   // FIGHT or PAUSE
+
+    assign LED[9:0]  = sp_led[9:0] & {10{show_leds}};                    // Karthi: ult code hints (above SW0-SW9), leds on only when in fight ur pause mode
+    assign LED[10]   = sp_led[13] && show_leds;                          // fireball ready  (above SW10)
+    assign LED[11]   = sp_led[11] && show_leds;                          // dash ready      (above SW11)
+    assign LED[12]   = sp_led[12] && show_leds;                          // shield ready    (above SW12)
+    assign LED[13]   = sp_led[10] && p1_meter_full && show_leds;         // ult ready, led indicator only in game       (above SW13): code + full meter
+    assign LED[14]   = (c_state == 4'b0101);                             // CPU in HITSTUN
+    assign LED[15]   = (p_state == 4'b0101);                             // player in HITSTUN
     
 endmodule
