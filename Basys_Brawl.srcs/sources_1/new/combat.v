@@ -69,11 +69,11 @@ module combat(
     
     localparam FULL_HP    = 7'b1100100;   
     localparam PUNCH_DMG  = 7'b0000100;   // 4
-    localparam PUNCH_CHIP = 7'b0000001;   // 1
+    localparam PUNCH_CHIP = 7'b0000010;   // 2
     localparam FB_DMG     = 7'b0000110;   // 6
-    localparam FB_CHIP    = 7'b0000010;   // 2  
-    localparam ULT_DMG    = 7'b0001000;   // 8  
-    localparam ULT_CHIP   = 7'b0000010;   
+    localparam FB_CHIP    = 7'b0000100;   // 4  
+    localparam ULT_DMG    = 7'b0001100;   // 12  
+    localparam ULT_CHIP   = 7'b0001001;   //9
     localparam R          = 7'b0000011;   // projectile hitbox: 3 px each side of centre
     localparam METER_MAX = 7'b1100100;
     localparam GAIN_PUNCH = 7'b0001010;
