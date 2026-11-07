@@ -1,23 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 10/17/2026 07:15:41 PM
-// Design Name: 
-// Module Name: atk_fireball
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
 module special_fireball(
     // ---- shared inputs from top level ----
@@ -35,7 +16,6 @@ module special_fireball(
 
     // ---- from THIS player's fighter (existing outputs) ----
     input [6:0] fighter_x,              // x-axis position of left edge
-    //input [6:0] feet_y,                 // y-axis position of base of fighter
     input face_right,                   // direction of facing, 1 -> right facing
     input [3:0] state,                  // to block firing in HITSTUN/KO etc.
     input [6:0] attack_top, input [6:0] attack_bottom,// projectile zone
@@ -43,14 +23,9 @@ module special_fireball(
     // ---- from the hit module ----
     input fb_hit,                       // fireball connected, so remove it
 
-    // ---- out to the hit module ---- //
-    //output reg        fb_active,
-    //output reg [6:0]  fb_left, fb_right,
-    //output [6:0]      fb_top, fb_bottom,
-    //output            fb_push_right,
-
     // ---- out to the board ----
     output fb_ready,       // cooldown finished (drive an LED)
+    
     //out to hit module 
     output fb_active,      //fireball is on screen
     output[6:0] fb_x, fb_y //fireball centre                   
@@ -123,18 +98,18 @@ module special_fireball(
     
     always @(*) begin
     
-        x = pixel_index % 96; //checks for x axis value
-        y = pixel_index/96;// check for y axis value
-        visible = 1'b0;
-        oled_data = 16'h0000;
+        x = pixel_index % 96;   //checks for x axis value
+        y = pixel_index/96;     // check for y axis value
+        visible = 1'b0;         // enable display
+        oled_data = 16'h0000;   // display colour
         
         if(fired) begin //if pending fire action to be completed
             if((x-fireball_x)*(x-fireball_x) + (y-fireball_y)*(y-fireball_y) <= 16) begin
                 visible = 1'b1;
                 if((x-fireball_x)*(x-fireball_x) + (y-fireball_y)*(y-fireball_y) <= 9) begin
                     if((x-fireball_x)*(x-fireball_x) + (y-fireball_y)*(y-fireball_y) <= 4) begin
-                        if(character_id == 2'd0) oled_data = 16'h81D8; //dull purple core
-                        else if(character_id == 2'd1) oled_data = 16'h042D; //dull green core
+                        if(character_id == 2'd0) oled_data = 16'h81D8; //dull pink core
+                        else if(character_id == 2'd1) oled_data = 16'h042D; //dull cyan core
                         else if (character_id == 2'd2) oled_data = 16'h73A0; // dull yellow core
                     end
                     else oled_data = 16'hFFFF; //white core

@@ -31,6 +31,7 @@ module special_def(
     input [1:0] character_id,           // character customisation
     output reg [15:0] oled_data,    // oled output
     output reg visible,             // oled output overlay
+    
     // ---- btnD input ----
     input def_pressed,                 // debounced button pulse for this player
 
@@ -42,12 +43,6 @@ module special_def(
     // ---- from the hit module ----
     input def_hit,                       // fireball connected, so remove it
 
-    // ---- out to the hit module ---- //
-    //output reg        def_active,
-    //output reg [6:0]  def_left, fb_right,
-    //output [6:0]      def_top, def_bottom,
-    //output            def_push_right,
-
     // ---- out to the board ----
     output def_ready,                     // cooldown finished (drive an LED)
     output shield_up                      //shield is active right now
@@ -55,28 +50,28 @@ module special_def(
 
     // ---- settings you may override per instance ----
     parameter COOLDOWN = 300;           // 10s at 30 ticks/s
-    parameter def_up_timelength = 90;    // 3s useage time for shield, then auto deactivates
+    parameter def_up_timelength = 90;   // 3s useage time for shield, then auto deactivates
 
     // ---- fixed constants (must match the fighter) ----
     localparam IDLE = 0, WALK = 1, JUMP = 2, BLOCK = 3;
     localparam PUNCH = 4, HITSTUN = 5, KO = 6, SPECIAL = 7;
     
-    reg def_lock = 0; //defence lock when cooldown
-    reg def_up = 0; //defence active and moving
-    reg def_input, def_pending;  // def input tracks button press, def pending checks for pending animation
-    reg [8:0] cooldown_count = COOLDOWN -1;        //countdown inside sequential block
+    reg def_lock = 0;                                     //defence lock when cooldown
+    reg def_up = 0;                                       //defence active and moving
+    reg def_input, def_pending;                           // def input tracks button press, def pending checks for pending animation
+    reg [8:0] cooldown_count = COOLDOWN -1;               //countdown inside sequential block
     reg [7:0] def_up_count = def_up_timelength -1;        //countdown inside sequential block
-    reg [6:0] x, y, def_xl, def_xr, def_yu, def_yd; // x and y axis value
-    reg left_wall;
+    reg [6:0] x, y, def_xl, def_xr, def_yu, def_yd;       // x and y axis value
+    reg left_wall;                                        // next 4 reg is used to check borders for shield display
     reg right_wall;
     reg up_wall;
     reg down_wall;
     
-    assign def_ready = !def_lock;
+    assign def_ready = !def_lock;                   // ready indicator when cooldown over
     assign shield_up = def_up;                      //def up is 1 while shiled is active. Combat checks shield_up before applying damage: if the shiled is up no damage and no knockback
     
     always @(posedge CLOCK) begin
-        if (reset) begin //usual reset logic
+        if (reset) begin //usual reset logic, reset everything
             def_up <= 0;
             def_lock <= 0;
             def_pending <= 0;

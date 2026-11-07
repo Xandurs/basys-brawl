@@ -1,23 +1,5 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 10/17/2026 07:15:41 PM
-// Design Name: 
-// Module Name: atk_fireball
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
+
 
 module special_ult(
     // ---- shared inputs from top level ----
@@ -30,25 +12,20 @@ module special_ult(
     input [1:0] character_id,
     output reg [15:0] oled_data,    // oled output
     output reg visible,             // oled output overlay
+    
     // ---- btnC input ----
     input ult_pressed,                 // ult mode activated for this player
-    input ult_unlocked,
-    output ult_used,
+    input ult_unlocked,                // ult is available for use after cooldown
+    output ult_used,                   // ult fired
+    
     // ---- from THIS player's fighter (existing outputs) ----
     input [6:0] fighter_x,              // x-axis position of left edge
-    //input [6:0] feet_y,                 // y-axis position of base of fighter
     input face_right,                   // direction of facing, 1 -> right facing
     input [3:0] state,                  // to block firing in HITSTUN/KO etc.
     input [6:0] attack_top, input [6:0] attack_bottom,// projectile zone
 
     // ---- from the hit module ----
     input ult_hit,                       // fireball connected, so remove it
-
-    // ---- out to the hit module ---- //
-    //output reg        fb_active,
-    //output reg [6:0]  fb_left, fb_right,
-    //output [6:0]      fb_top, fb_bottom,
-    //output            fb_push_right,
 
     // ---- out to the board ----
     output ult_ready,     // cooldown finished (drive an LED)
@@ -86,9 +63,7 @@ module special_ult(
     assign ult_py = ult_y;
     
     //launch condition (waits for tick, blocked while stunned/KO/not playing)
-    //wire launch = tick && (ult_pending || (ult_pressed && ult_unlocked)) && !ult_lock && !ult_executing
-   //               && playing && !ko && !(state == HITSTUN || state == KO);
-   wire launch = tick && (ult_pending || (ult_pressed && ult_unlocked)) && !ult_executing
+    wire launch = tick && (ult_pending || (ult_pressed && ult_unlocked)) && !ult_executing
                  && playing && !ko && !(state == HITSTUN || state == KO);
 
     //one-clock pulse to the manager (NOT ult_executing, which stays high the whole flight)
@@ -108,10 +83,8 @@ module special_ult(
     always @(posedge CLOCK) begin
         if (reset) begin
             ult_executing <= 0;
-           // ult_lock <= 0;
             ult_pending <= 0;
             displacement <= 0;
-            //countdown <= COOLDOWN - 1;
             ult_shots <= 2;
             y_dir <= 0;
         end else begin
@@ -125,10 +98,9 @@ module special_ult(
                     case(character_id)
                     2'd0:   begin
                             ult_executing <= 1;
-                            //ult_lock <= 1;
                             direction <= face_right;
                             displacement <= 0;
-                            ult_x <= face_right ? (fighter_x + 12) : fighter_x;
+                            ult_x <= face_right ? (fighter_x + 12 + 10) : fighter_x;
                             ult_y <= (attack_bottom+attack_top)/2;
                             ult_shots <= 2;
                             y_dir <= 0;
@@ -136,15 +108,13 @@ module special_ult(
 
                     2'd1:   begin
                             ult_executing <= 1;
-                            //ult_lock <= 1;
-                            ult_x <= (face_right) ? (fighter_x + 12 + 10) : fighter_x - 10;
+                            ult_x <= (face_right) ? (fighter_x + 12 + 5) : fighter_x - 5;
                             ult_y <= 10;
                             direction <= face_right;
                     end
 
                     2'd2:   begin 
                             ult_executing <= 1;
-                            //ult_lock <= 1;
                             ult_x <= (face_right) ? 1 : 95;
                             ult_y <= 45;
                             direction <= face_right;
@@ -183,11 +153,11 @@ module special_ult(
 
                         2'd1:   begin
                                 if(ult_y < 60 && ult_x > 1 && ult_x < 100 && !ult_hit) begin
-                                    ult_y <= ult_y + 7;
+                                    ult_y <= ult_y + 5;
                                 end
                                 else if (ult_shots == 2) begin
                                     ult_shots <= 1;
-                                    ult_x <= (direction) ? (fighter_x + 12 + 10 + 20) : fighter_x - 10 - 20;
+                                    ult_x <= (direction) ? (fighter_x + 12 + 20) : fighter_x - 20;
                                     ult_y <= 10;
                                 end
                                 else if (ult_shots == 1) begin
@@ -203,16 +173,6 @@ module special_ult(
                         end
                     endcase
                 end
-
-                //if (ult_lock) countdown <= countdown - 1;
-
-                //if (countdown == 0 && !(state == HITSTUN || state == KO)) begin
-                    //countdown <= COOLDOWN - 1;
-                   // ult_lock <= 0;
-                //end
-                //else if (state == HITSTUN || state == KO) begin
-                    //countdown <= countdown;
-                //end
             end
         end
     end
@@ -262,4 +222,3 @@ module special_ult(
     end
 
 endmodule
-
