@@ -1,23 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 10/17/2026 07:15:41 PM
-// Design Name: 
-// Module Name: atk_fireball
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
 module special_dash(
     // ---- shared inputs from top level ----
@@ -32,16 +13,11 @@ module special_dash(
     input dash_pressed_bkw,                // takes keyboard N as input, detects high to activate back dash                                 
     input dash_pressed_fwd,                 // takes Keyboard M as input, detect high to activate front dash
     output reg dashing,                 // used to output dashing state to fighter mod so that fighter mod check for dashes and update x, before executing any other movement
+    
     // ---- from THIS player's fighter (existing outputs) ----
     input [6:0] fighter_x,              // x-axis position of left edge
     input face_right,                   // direction of facing, 1 -> right facing
     input [3:0] state,                  // to block dash in HITSTUN/KO etc.
-
-    // ---- out to the hit module ---- //
-    //output reg        fb_active,
-    //output reg [6:0]  fb_left, fb_right,
-    //output [6:0]      fb_top, fb_bottom,
-    //output            fb_push_right,
 
     // ---- out to the board ----
     output dash_ready ,                    // cooldown finished (drive an LED)

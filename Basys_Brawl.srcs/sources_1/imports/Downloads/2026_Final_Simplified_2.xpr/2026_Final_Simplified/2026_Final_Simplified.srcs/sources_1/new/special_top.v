@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module special_top(
     input CLOCK, reset, tick, playing, ko,
     input [12:0] pixel_index,
@@ -12,21 +14,21 @@ module special_top(
     input ult_meter_full,              // check ult guage
 
     // from the player's fighter
-    input [6:0] fighter_x, feet_y,
-    input face_right,
-    input [3:0] state,
-    input [6:0] attack_top, attack_bottom,
+    input [6:0] fighter_x, feet_y,          //from fighter, fighter x/y positions
+    input face_right,                       //fighter direction
+    input [3:0] state,                      //fighter state
+    input [6:0] attack_top, attack_bottom,  //attack range (only a reference, some attack didnt use this range)
 
     // from outside
-    input [1:0] character_id,
+    input [1:0] character_id,               // character id (for 3 characters)
 
     // to the fighter / drawing
-    output dash_active,
-    output [6:0] dash_x,
+    output dash_active,                     //dash is active indiation to movement for player
+    output [6:0] dash_x,                    // how much to dash to movement for player
 
     // merged overlay out
-    output reg        sp_visible,
-    output reg [15:0] sp_colour,
+    output reg        sp_visible,           //special display 
+    output reg [15:0] sp_colour,            //special display colours
 
     // LEDs: [9:0] code hints, [10] ult ready, [11] dash, [12] def, [13] fireball
     output [13:0] sp_led,
@@ -34,12 +36,12 @@ module special_top(
     //link to Xander's combat module
     input fb_hit,               // combat: fireball connected
     input ult_hit,              // combat: ult shot connected
-    output fb_active,
-    output [6:0] fb_x, fb_y,
-    output ult_active,
-    output ult_used_out,        //send signal to clear buffer that stores past ult code keyyed 
-    output [6:0] ult_px, ult_py,
-    output shield_up
+    output fb_active,           // combat: fireball is fired
+    output [6:0] fb_x, fb_y,    // combat: fireball x and y location
+    output ult_active,          // commbat: ult if fired
+    output ult_used_out,        // send signal to clear buffer that stores past ult code keyyed 
+    output [6:0] ult_px, ult_py,// combat: ult x y location
+    output shield_up            // shield active
 );
 
     // ---------- dash edge detect (moved here from fighter_demo_core) ----------

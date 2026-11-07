@@ -1,23 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 10/16/2026 10:23:00 PM
-// Design Name: 
-// Module Name: ult_manager
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
 
 module ult_manager(
@@ -33,6 +14,7 @@ module ult_manager(
     );
     
     //parameters//
+
     /*ult unlock codes*/
     parameter code1 = 103;
     parameter code2 = 295;
@@ -50,23 +32,18 @@ module ult_manager(
     parameter code14 = 561;
     parameter code15 = 789;
    
-    
-    reg [9:0] count = 0; 
-    reg charge = 0; 
-    reg [36:0] randomiser = 0; 
-    reg [3:0] code_number = 0; 
-    integer selected_code = 0;
-    reg [3:0] digits = 0; reg [1:0] scan = 0;
-    reg [2:0] state = 3'b000; //FSM tracker for switch sequence
-    reg [3:0] digitAn = 0; 
-    wire [9:0]expected_sw;
-    wire [3:0] hundreds; wire [3:0] tens; wire [3:0] ones;
+
+    reg [36:0] randomiser = 0;                                  //random gen number from 1-15
+    reg [3:0] code_number = 0;                                  //case selector
+    integer selected_code = 0;                                  //store selected code from parameter
+    reg [2:0] state = 3'b000;                                   //FSM tracker for switch sequence
+    wire [9:0]expected_sw;                                      // reference sw model needed to change state
+    wire [3:0] hundreds; wire [3:0] tens; wire [3:0] ones;      // split code into indivdual values; eg 123 -> 1,2,3
     
     /*randomiser that selects 1-15 by taking remainder of a running clock*/
     always @(posedge clk) begin
-        randomiser <= (charge)? randomiser: randomiser + 1;
+        randomiser <= randomiser + 1;
         if (ult_used) code_number <= (randomiser % 15) + 1;
-        //scan <= scan + 1;
     end
  
     assign hundreds = selected_code/100; // 1st digit from right
